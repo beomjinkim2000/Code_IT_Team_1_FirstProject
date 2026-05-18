@@ -19,3 +19,6 @@ __pycache__/
 
 # 환경
 .env
+
+# Claude Code
+.claude/
