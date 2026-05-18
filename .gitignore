@@ -1,0 +1,21 @@
+# 데이터 (용량 크고 공유 불가)
+data/raw/
+data/augmented/
+
+# 모델 가중치
+outputs/
+*.pt
+*.onnx
+*.pth
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
+
+# 환경
+.env

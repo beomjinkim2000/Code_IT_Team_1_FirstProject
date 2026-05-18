@@ -1,0 +1,21 @@
+model:
+  name: yolov8n          # yolov8n / yolov8s / yolov8m / yolov8l
+  num_classes: null      # EDA 후 확정
+
+data:
+  train: data/processed/images/train
+  val: data/processed/images/val
+  nc: null               # EDA 후 확정
+  names: []              # EDA 후 확정
+
+train:
+  epochs: 50
+  batch_size: 16
+  lr: 0.001
+  img_size: 640
+  seed: 42
+
+paths:
+  checkpoint: outputs/checkpoints/
+  prediction: outputs/predictions/
+  submission: outputs/submissions/
