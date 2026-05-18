@@ -97,7 +97,3 @@ outputs/submissions/submission_v1.csv
 | 이름 | 링크 |
 |---|---|
 | (팀원별 Notion 또는 블로그 링크 추가) | |
-
-## 보고서
-
-[reports/report.pdf](reports/report.pdf)
