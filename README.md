@@ -96,5 +96,5 @@ outputs/submissions/submission_v1.csv
 
 | 항목 | 링크 |
 |---|---|
-| 📒 팀 협업 노트 (Obsidian Vault) | [Sprint_First_Proj](https://github.com/beomjinkim2000/Sprint_First_Proj) |
-| 🌐 팀 문서 웹사이트 (Quartz) | [beomjinkim2000.github.io/Sprint_First_Proj](https://beomjinkim2000.github.io/Sprint_First_Proj/) |
+| 📒 팀 협업 일지 (Quartz) | [beomjinkim2000.github.io/Sprint_First_Proj](https://beomjinkim2000.github.io/Sprint_First_Proj/) |
+| 🐙 팀 문서 GitHub | [Sprint_First_Proj](https://github.com/beomjinkim2000/Sprint_First_Proj) |
