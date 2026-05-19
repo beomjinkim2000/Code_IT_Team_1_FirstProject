@@ -92,14 +92,6 @@ outputs/submissions/submission_v1.csv
 
 ---
 
-## 협업 일지
-
-| 이름 | 링크 |
-|---|---|
-| (팀원별 Notion 또는 블로그 링크 추가) | |
-
----
-
 ## 팀 문서
 
 | 항목 | 링크 |
