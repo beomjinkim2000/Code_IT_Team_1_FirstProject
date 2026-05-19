@@ -6,13 +6,13 @@
 
 ## 팀 소개
 
-| 역할 | 담당 모듈 |
-|---|---|
-| 팀장/PM | 아키텍처, `interfaces.md`, `utils/bbox.py`, `submission/`, PR 리뷰 |
-| Data 담당 | 데이터 확인, annotation 분석, EDA 노트북 |
-| Dataset 담당 | `src/data/dataset.py`, `transforms.py`, `split.py` |
-| Model/Train 담당 | `src/models/baseline.py`, `src/engine/train.py`, `evaluate.py` |
-| Inference/Report 담당 | `src/engine/predict.py`, 보고서, 발표자료 |
+| 역할 | 담당자 | 담당 모듈 |
+|---|---|---|
+| 팀장/PM | 김범진 | 아키텍처, `interfaces.md`, `utils/bbox.py`, PR 리뷰, 전체 관리 및 총괄 |
+| Data·Dataset 담당 | 정: 황원재 / 부: 유재열·박창준 | 데이터 확인, annotation 분석, EDA 노트북, `src/data/dataset.py`, `transforms.py`, `split.py` |
+| Model·Train 담당 | 정: 유재열 / 부: 박창준 | `src/models/baseline.py`, `src/engine/train.py`, `evaluate.py` |
+| 후처리 담당 | 정: 박창준 / 부: 유재열 | `src/engine/predict.py`, `submission/` |
+| 보고서 | 전원 | 실험 로그, 보고서, 발표자료 |
 
 ---
 
