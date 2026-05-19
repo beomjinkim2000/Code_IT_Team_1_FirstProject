@@ -1,0 +1,84 @@
+name: Sync issue status to Obsidian vault
+
+on:
+  issues:
+    types: [closed, reopened, labeled, unlabeled]
+  pull_request:
+    types: [opened, closed, review_requested]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Obsidian vault
+        uses: actions/checkout@v4
+        with:
+          repository: beomjinkim2000/Sprint_First_Proj
+          token: ${{ secrets.VAULT_PAT }}
+          path: vault
+
+      - name: Update task file
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_ACTION: ${{ github.event.action }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+          LABEL_NAME: ${{ github.event.label.name }}
+          PR_MERGED: ${{ github.event.pull_request.merged }}
+        run: |
+          FILE="vault/tasks/issue-${ISSUE_NUMBER}.md"
+
+          if [ ! -f "$FILE" ]; then
+            echo "No task file for issue #${ISSUE_NUMBER}, skipping."
+            exit 0
+          fi
+
+          # Determine new status
+          if [ "$EVENT_NAME" = "issues" ]; then
+            case "$EVENT_ACTION" in
+              closed)
+                NEW_ST="done" ;;
+              reopened)
+                NEW_ST="todo" ;;
+              labeled)
+                case "$LABEL_NAME" in
+                  in-progress)  NEW_ST="in-progress" ;;
+                  in-review)    NEW_ST="in-review" ;;
+                  blocked)      NEW_ST="blocked" ;;
+                  *)            exit 0 ;;
+                esac ;;
+              unlabeled)
+                case "$LABEL_NAME" in
+                  in-progress|in-review|blocked) NEW_ST="todo" ;;
+                  *) exit 0 ;;
+                esac ;;
+            esac
+          elif [ "$EVENT_NAME" = "pull_request" ]; then
+            case "$EVENT_ACTION" in
+              opened)           NEW_ST="in-review" ;;
+              closed)
+                if [ "$PR_MERGED" = "true" ]; then
+                  NEW_ST="done"
+                else
+                  NEW_ST="todo"
+                fi ;;
+              review_requested) NEW_ST="in-review" ;;
+              *) exit 0 ;;
+            esac
+          fi
+
+          # Replace st field in frontmatter
+          sed -i "s/^st: .*/st: ${NEW_ST}/" "$FILE"
+          echo "Updated issue-${ISSUE_NUMBER}.md → st: ${NEW_ST}"
+
+      - name: Commit and push
+        run: |
+          cd vault
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "No changes to commit."
+          else
+            git add tasks/
+            git commit -m "[bot] sync #${{ github.event.issue.number || github.event.pull_request.number }} → $(cd .. && grep '^st:' vault/tasks/issue-${{ github.event.issue.number || github.event.pull_request.number }}.md | head -1 | cut -d' ' -f2)"
+            git push
+          fi
