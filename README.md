@@ -97,3 +97,12 @@ outputs/submissions/submission_v1.csv
 | 이름 | 링크 |
 |---|---|
 | (팀원별 Notion 또는 블로그 링크 추가) | |
+
+---
+
+## 팀 문서
+
+| 항목 | 링크 |
+|---|---|
+| 📒 팀 협업 노트 (Obsidian Vault) | [Sprint_First_Proj](https://github.com/beomjinkim2000/Sprint_First_Proj) |
+| 🌐 팀 문서 웹사이트 (Quartz) | [beomjinkim2000.github.io/Sprint_First_Proj](https://beomjinkim2000.github.io/Sprint_First_Proj/) |
