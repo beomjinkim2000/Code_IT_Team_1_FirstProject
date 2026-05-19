@@ -1,0 +1,68 @@
+name: 프로젝트에서 제거 시 이슈 자동 삭제
+
+on:
+  projects_v2_item:
+    types: [deleted]
+
+permissions:
+  issues: write
+
+jobs:
+  delete-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 이슈 삭제
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const item = context.payload.projects_v2_item;
+
+            if (item.content_type !== 'Issue') {
+              console.log('이슈가 아닌 항목, 건너뜀');
+              return;
+            }
+
+            const nodeId = item.content_node_id;
+            if (!nodeId) {
+              console.log('이슈 node ID 없음');
+              return;
+            }
+
+            // 이슈 정보 조회 (이 레포 소속인지 확인)
+            const issueData = await github.graphql(`
+              query($nodeId: ID!) {
+                node(id: $nodeId) {
+                  ... on Issue {
+                    number
+                    title
+                    repository {
+                      name
+                      owner { login }
+                    }
+                  }
+                }
+              }
+            `, { nodeId });
+
+            const issue = issueData.node;
+            if (!issue) {
+              console.log('이슈를 찾을 수 없음 (이미 삭제됨)');
+              return;
+            }
+
+            const { name, owner } = issue.repository;
+            if (owner.login !== context.repo.owner || name !== context.repo.repo) {
+              console.log(`다른 레포의 이슈 (${owner.login}/${name}), 건너뜀`);
+              return;
+            }
+
+            await github.graphql(`
+              mutation($issueId: ID!) {
+                deleteIssue(input: { issueId: $issueId }) {
+                  repository { name }
+                }
+              }
+            `, { issueId: nodeId });
+
+            console.log(`✅ 이슈 #${issue.number} "${issue.title}" 삭제 완료`);
