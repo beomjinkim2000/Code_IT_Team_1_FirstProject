@@ -56,7 +56,7 @@ jobs:
             TITLE="💬 PR 코드에 인라인 댓글이 달렸습니다"
             COLOR=16776960
             DESC="[${{ github.event.pull_request.title }}](${{ github.event.comment.html_url }})"
-            EXTRA_FIELD=", { \"name\": \"작성자\", \"value\": \"${{ github.event.comment.user.login }}\", \"inline\": true }"
+            EXTRA_FIELD=", { \"name\": \"리뷰어\", \"value\": \"${{ github.event.comment.user.login }}\", \"inline\": true }"
 
           else
             TITLE="🔔 새 PR이 열렸습니다!"
