@@ -4,6 +4,9 @@ from ultralytics import YOLO
 
 # YOLO모델 기존에 학습된 클래스를 필요한 클래스(알약) 수에 맞게 변경하는 함수
 def _adapt_num_classes(model: nn.Module, num_classes: int) -> None:
+    if num_classes is None or num_classes <= 0:     #num_classes가 None 이거나 0이하인 경우
+        raise ValueError(f"num_classes는 1 이상이어야 합니다. 현재 값: {num_classes}")
+
     detect_head = model.model[-1]       #YOLO 모델 마지막에 있는 Detect Head를 가져옴
     detect_head.nc = num_classes        #Detect Head의 클래스 수를 num_classes로 변경  (config.yaml의 num_classes와 일치)
     detect_head.no = num_classes + detect_head.reg_max * 4      #num_classes + 4개의 bbox 좌표 예측값(left, top, right, bottom) * 4
