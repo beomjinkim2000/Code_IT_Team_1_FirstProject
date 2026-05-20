@@ -5,6 +5,15 @@ on:
     types: [opened, reopened, closed]
   pull_request_review:
     types: [submitted]
+  pull_request_review_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Discord 알림 없이 로그만 출력 (테스트용)'
+        required: false
+        default: 'true'
+        type: boolean
 
 jobs:
   notify:
@@ -17,6 +26,7 @@ jobs:
           EVENT="${{ github.event_name }}"
           ACTION="${{ github.event.action }}"
           MERGED="${{ github.event.pull_request.merged }}"
+          DRY_RUN="${{ inputs.dry_run }}"
 
           if [ "$EVENT" = "pull_request" ] && [ "$ACTION" = "closed" ] && [ "$MERGED" = "true" ]; then
             TITLE="✅ PR이 머지됐습니다!"
@@ -42,6 +52,12 @@ jobs:
             DESC="[${{ github.event.pull_request.title }}](${{ github.event.review.html_url }})"
             EXTRA_FIELD=", { \"name\": \"리뷰어\", \"value\": \"${{ github.event.review.user.login }}\", \"inline\": true }"
 
+          elif [ "$EVENT" = "pull_request_review_comment" ]; then
+            TITLE="💬 PR 코드에 인라인 댓글이 달렸습니다"
+            COLOR=16776960
+            DESC="[${{ github.event.pull_request.title }}](${{ github.event.comment.html_url }})"
+            EXTRA_FIELD=", { \"name\": \"작성자\", \"value\": \"${{ github.event.comment.user.login }}\", \"inline\": true }"
+
           else
             TITLE="🔔 새 PR이 열렸습니다!"
             COLOR=5814783
@@ -49,9 +65,7 @@ jobs:
             EXTRA_FIELD=""
           fi
 
-          curl -H "Content-Type: application/json" \
-            -X POST \
-            -d "{
+          PAYLOAD="{
               \"embeds\": [{
                 \"title\": \"$TITLE\",
                 \"description\": \"$DESC\",
@@ -64,5 +78,14 @@ jobs:
                 ],
                 \"footer\": { \"text\": \"GitHub Actions\" }
               }]
-            }" \
-            "$DISCORD_WEBHOOK_URL"
+            }"
+
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "[DRY RUN] Discord 알림 생략"
+            echo "$PAYLOAD"
+          else
+            curl -H "Content-Type: application/json" \
+              -X POST \
+              -d "$PAYLOAD" \
+              "$DISCORD_WEBHOOK_URL"
+          fi
