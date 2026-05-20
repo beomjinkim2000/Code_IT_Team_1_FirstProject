@@ -5,8 +5,6 @@ on:
     types: [opened, reopened, closed]
   pull_request_review:
     types: [submitted]
-  pull_request_review_comment:
-    types: [created]
 
 jobs:
   notify:
@@ -43,12 +41,6 @@ jobs:
             fi
             DESC="[${{ github.event.pull_request.title }}](${{ github.event.review.html_url }})"
             EXTRA_FIELD=", { \"name\": \"리뷰어\", \"value\": \"${{ github.event.review.user.login }}\", \"inline\": true }"
-
-          elif [ "$EVENT" = "pull_request_review_comment" ]; then
-            TITLE="💬 PR 코드에 리뷰 댓글이 달렸습니다"
-            COLOR=16776960
-            DESC="[${{ github.event.pull_request.title }}](${{ github.event.comment.html_url }})"
-            EXTRA_FIELD=", { \"name\": \"작성자\", \"value\": \"${{ github.event.comment.user.login }}\", \"inline\": true }"
 
           else
             TITLE="🔔 새 PR이 열렸습니다!"
