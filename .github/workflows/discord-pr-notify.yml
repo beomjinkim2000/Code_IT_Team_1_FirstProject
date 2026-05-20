@@ -33,6 +33,7 @@ jobs:
             COLOR=3066993
             DESC="[${{ github.event.pull_request.title }}](${{ github.event.pull_request.html_url }})"
             EXTRA_FIELD=", { \"name\": \"머지한 사람\", \"value\": \"${{ github.event.pull_request.merged_by.login }}\", \"inline\": true }"
+            RAW_BODY="${{ github.event.pull_request.body }}"
 
           elif [ "$EVENT" = "pull_request" ] && [ "$ACTION" = "closed" ]; then
             exit 0
@@ -51,18 +52,44 @@ jobs:
             fi
             DESC="[${{ github.event.pull_request.title }}](${{ github.event.review.html_url }})"
             EXTRA_FIELD=", { \"name\": \"리뷰어\", \"value\": \"${{ github.event.review.user.login }}\", \"inline\": true }"
+            RAW_BODY="${{ github.event.review.body }}"
 
           elif [ "$EVENT" = "pull_request_review_comment" ]; then
             TITLE="💬 PR 코드에 인라인 댓글이 달렸습니다"
             COLOR=16776960
             DESC="[${{ github.event.pull_request.title }}](${{ github.event.comment.html_url }})"
             EXTRA_FIELD=", { \"name\": \"리뷰어\", \"value\": \"${{ github.event.comment.user.login }}\", \"inline\": true }"
+            RAW_BODY="${{ github.event.comment.body }}"
 
           else
             TITLE="🔔 새 PR이 열렸습니다!"
             COLOR=5814783
             DESC="[${{ github.event.pull_request.title }}](${{ github.event.pull_request.html_url }})"
             EXTRA_FIELD=""
+            RAW_BODY="${{ github.event.pull_request.body }}"
+          fi
+
+          # 코드 블록 제거 + 200자 truncate + 스포일러 처리
+          BODY_CLEAN=$(printf '%s' "$RAW_BODY" \
+            | sed '/^```/,/^```/d' \
+            | sed 's/`[^`]*`//g' \
+            | tr '\n' ' ' \
+            | sed 's/  */ /g' \
+            | sed 's/^ //;s/ $//')
+          if [ ${#BODY_CLEAN} -gt 200 ]; then
+            BODY_FIELD="||${BODY_CLEAN:0:200}...||"
+          elif [ -n "$BODY_CLEAN" ]; then
+            BODY_FIELD="||${BODY_CLEAN}||"
+          else
+            BODY_FIELD=""
+          fi
+
+          # body 필드 (내용 있을 때만)
+          if [ -n "$BODY_FIELD" ]; then
+            BODY_JSON=$(python3 -c "import json,sys; print(json.dumps(sys.argv[1]))" "$BODY_FIELD")
+            BODY_FIELD_OBJ=", { \"name\": \"내용\", \"value\": $BODY_JSON, \"inline\": false }"
+          else
+            BODY_FIELD_OBJ=""
           fi
 
           PAYLOAD="{
@@ -75,6 +102,7 @@ jobs:
                   $EXTRA_FIELD,
                   { \"name\": \"브랜치\", \"value\": \"\`${{ github.event.pull_request.head.ref }}\` → \`${{ github.event.pull_request.base.ref }}\`\", \"inline\": false },
                   { \"name\": \"리포지토리\", \"value\": \"${{ github.repository }}\", \"inline\": false }
+                  $BODY_FIELD_OBJ
                 ],
                 \"footer\": { \"text\": \"GitHub Actions\" }
               }]
