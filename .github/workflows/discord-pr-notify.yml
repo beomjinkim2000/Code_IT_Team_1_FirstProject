@@ -101,7 +101,6 @@ jobs:
                   { \"name\": \"작성자\", \"value\": \"${{ github.event.pull_request.user.login }}\", \"inline\": true }
                   $EXTRA_FIELD,
                   { \"name\": \"브랜치\", \"value\": \"\`${{ github.event.pull_request.head.ref }}\` → \`${{ github.event.pull_request.base.ref }}\`\", \"inline\": false },
-                  { \"name\": \"리포지토리\", \"value\": \"${{ github.repository }}\", \"inline\": false }
                   $BODY_FIELD_OBJ
                 ],
                 \"footer\": { \"text\": \"GitHub Actions\" }
