@@ -5,15 +5,23 @@ validate_dataset 테스트용 Mock 데이터셋.
   1. 자기 dataset.py가 올바른 형식을 반환하는지 확인할 때 기준으로 삼기
   2. validate_dataset 자체가 각 조건을 제대로 잡는지 확인
 
-실행:
+직접 실행:
   python tests/mock_dataset.py
+
+다른 파일에서 임포트:
+  from tests.mock_dataset import MockDataset
+  ds = MockDataset(size=4, img_size=640, num_classes=10)
 """
 
 import random
 import sys
 import os
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+# 프로젝트 루트에서 실행할 때는 이미 sys.path에 있지만,
+# 이 파일을 직접 실행(python tests/mock_dataset.py)할 때는 없으므로 보장용으로 추가
+_root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+if _root not in sys.path:
+    sys.path.insert(0, _root)
 
 import torch
 from torch.utils.data import Dataset
