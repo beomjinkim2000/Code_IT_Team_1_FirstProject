@@ -9,9 +9,9 @@
 | 역할 | 정 (주담당) | 부 (보조) | 담당 모듈 |
 |---|---|---|---|
 | 팀장/PM | beomjinkim2000 | - | 아키텍처, `interfaces.md`, `utils/bbox.py`, PR 리뷰, 전체 관리 및 총괄 |
-| Data·Dataset 담당 | zipdid | YuY9897·cjkj1234 | 데이터 확인, annotation 분석, EDA 노트북, `src/data/dataset.py`, `transforms.py`, `split.py` |
-| Model·Train 담당 | YuY9897 | cjkj1234 | `src/models/baseline.py`, `src/engine/train.py`, `evaluate.py` |
-| 후처리 담당 | cjkj1234 | YuY9897 | `src/engine/predict.py`, `submission/` |
+| Data·Dataset 담당 | zipdid | YuJY9897·cjkj1234 | 데이터 확인, annotation 분석, EDA 노트북, `src/data/dataset.py`, `transforms.py`, `split.py` |
+| Model·Train 담당 | YuJY9897 | cjkj1234 | `src/models/baseline.py`, `src/engine/train.py`, `evaluate.py` |
+| 후처리 담당 | cjkj1234 | YuJY9897 | `src/engine/predict.py`, `submission/` |
 | 보고서 | 전원 | - | 실험 로그, 보고서, 발표자료 |
 
 ---
@@ -43,7 +43,7 @@ project/
 │   ├── models/            # baseline.py (build_model)
 │   ├── engine/            # train.py, evaluate.py, predict.py
 │   ├── submission/        # make_submission.py
-│   └── utils/             # bbox.py, visualize.py, seed.py
+│   └── utils/             # bbox.py, seed.py, config.py, validate.py, collate.py
 ├── outputs/               # checkpoints, predictions, submissions (git 추적 제외)
 └── reports/               # 실험 로그, 보고서
 ```
