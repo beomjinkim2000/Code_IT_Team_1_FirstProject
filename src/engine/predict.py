@@ -20,9 +20,8 @@ class PredictConfig:
   max_detections: int = 4
   device: str | None = None
 
-def load_model(checkpoint_path: str | Path) -> Any:
-  """ 학습된 모델 체크포인트 불러오기"""
-  raise NotImplementedError("issue #18")
+# todo(issue #18): checkpoint.py에 모델 로딩 함수가 구현되면
+# predict 실행부에서 해당 함수를 호출하도록 연결한다.
 
 def predict_images(
     model: Any,
@@ -36,6 +35,7 @@ def predict_images(
   config = config or PredictConfig()
   predictions: list[Prediction] = []
   for image_id, _ in enumerate(image_paths):
+    #실제 구현에서는 image_path를 전처리한 뒤 model inference 결과로 prediction을 생성한다.
     prediction = make_dummy_prediction(image_id=image_id)
     prediction = postprocess_prediction(prediction, config)
     predictions.append(prediction)
@@ -43,7 +43,10 @@ def predict_images(
   return predictions
 
 def make_dummy_prediction(image_id: int) -> Prediction:
-  """xyxy 형식으로 더미 예측값을 하나 생성합니다."""
+  """interfaces.md 섹션 4 형식에 맞춘 임시 예측값을 생성합니다.
+
+  todo(issue #18): 실제 모델 출력 변환 로직으로 교체한다.
+  boxes는 프로젝트 내부 규칙에 따라 xyxy 형식입니다."""
   return {
     "image_id": int(image_id),
     "boxes": torch.tensor([[10.0, 20.0, 50.0, 80.0]], dtype=torch.float32),
@@ -55,7 +58,9 @@ def postprocess_prediction(
     prediction: Prediction,
     config: PredictConfig,
 ) -> Prediction:
-  """신뢰도 필터링, 점수 정렬 및 상위 k개 항목 제거를 적용합니다."""
+  """신뢰도 필터링, 점수 정렬 및 상위 k개 항목 제거를 적용합니다.
+  todo(issue #18): 실제 예측 결과에 NMS 또는 YOLO 후처리 로직이 필요하면 여기서 확장한다.
+  """
   boxes = prediction["boxes"]
   labels = prediction["labels"]
   scores = prediction["scores"]
