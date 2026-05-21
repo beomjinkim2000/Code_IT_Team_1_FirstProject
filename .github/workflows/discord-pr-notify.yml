@@ -46,7 +46,7 @@ jobs:
           MERGED="$GH_MERGED"
 
           if [ "$EVENT" = "pull_request" ] && [ "$ACTION" = "closed" ] && [ "$MERGED" = "true" ]; then
-            TITLE="PR이 머지됐습니다"
+            TITLE="✅ PR이 머지됐습니다!"
             COLOR=3066993
             DESC="[${PR_TITLE}](${PR_URL})"
             EXTRA_NAME="머지한 사람"
@@ -59,13 +59,13 @@ jobs:
           elif [ "$EVENT" = "pull_request_review" ]; then
             STATE="$REVIEW_STATE"
             if [ "$STATE" = "approved" ]; then
-              TITLE="PR이 승인됐습니다"
+              TITLE="✅ PR이 승인됐습니다!"
               COLOR=3066993
             elif [ "$STATE" = "changes_requested" ]; then
-              TITLE="변경 요청이 달렸습니다"
+              TITLE="🔁 변경 요청이 달렸습니다"
               COLOR=15158332
             else
-              TITLE="PR에 리뷰가 달렸습니다"
+              TITLE="💬 PR에 리뷰가 달렸습니다"
               COLOR=16776960
             fi
             DESC="[${PR_TITLE}](${REVIEW_URL})"
@@ -74,7 +74,7 @@ jobs:
             RAW_BODY="$REVIEW_BODY"
 
           elif [ "$EVENT" = "pull_request_review_comment" ]; then
-            TITLE="PR 코드에 인라인 댓글이 달렸습니다"
+            TITLE="💬 PR 코드에 인라인 댓글이 달렸습니다"
             COLOR=16776960
             DESC="[${PR_TITLE}](${COMMENT_URL})"
             EXTRA_NAME="리뷰어"
@@ -82,7 +82,7 @@ jobs:
             RAW_BODY="$COMMENT_BODY"
 
           else
-            TITLE="새 PR이 열렸습니다"
+            TITLE="🔔 새 PR이 열렸습니다!"
             COLOR=5814783
             DESC="[${PR_TITLE}](${PR_URL})"
             EXTRA_NAME=""
