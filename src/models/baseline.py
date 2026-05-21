@@ -27,16 +27,14 @@ def _adapt_num_classes(model: nn.Module, num_classes: int) -> None:
         branch[-1] = new_layer      #new_layer에 마지막 레이어에 변경한 weight, bias값을 저장
 
     model.nc = num_classes      #모델에 num_classes 정보를 저장
-    model.names = {i: str(i) for i in range(num_classes)}       #config.py 완성 시 해당 줄 삭제
-    #model.names = {i: name for i, name in enumerate(class_names)}      #config.py 완성 시 class_names를 받아올 수 있도록 수정
+    model.names = {i: str(i) for i in range(num_classes)}
+    #model.names = {i: name for i, name in enumerate(class_names)}      #class_names가 작성되면 해당 코드로 수정
 
 
-def build_model(num_classes: int) -> torch.nn.Module:
-    yolo = YOLO("yolov8n.pt")
-    #yolo = YOLO(model_name)     #config.py에서 모델 이름을 받아올 수 있도록 수정
+#def build_model(num_classes: int) -> torch.nn.Module:
+def build_model(model_name: str, num_classes: int) -> torch.nn.Module:
+    yolo = YOLO(f"{model_name}.pt")
     model = yolo.model
 
     _adapt_num_classes(model, num_classes)
-    model.train()       #train모드로 설정
-
     return model
