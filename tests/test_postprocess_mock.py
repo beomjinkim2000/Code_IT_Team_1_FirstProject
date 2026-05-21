@@ -35,48 +35,60 @@ def make_mock_prediction() -> dict:
         "scores": torch.tensor([0.9, 0.2, 0.7], dtype=torch.float32),
     }
 
-def main() -> None:
-    """Mock prediction을 postprocess.py에 넣어 1회 실행 흐름을 확인.
-
-    확인하는 내용:
-    - confidence threshold보다 낮은 예측이 제거되는지
-    - score 기준 내림차순 정렬이 되는지
-    - max_detections 제한이 적용되는지
-    - interfaces.md 형식을 지키는지
-    """
+def test_postprocess_prediction() -> None:
+    """Mock prediction 1개를 후처리해서 필터링/정렬/개수 제한을 확인."""
     config = PostprocessConfig(
         conf_threshold=0.25,
         iou_threshold=0.7,
         max_detections=2,
     )
 
-    prediction = make_mock_prediction()
-    processed = postprocess_prediction(prediction, config)
+    processed = postprocess_prediction(make_mock_prediction(), config)
 
     assert processed["image_id"] == 0
 
     assert processed["boxes"].shape == (2, 4)
     assert processed["labels"].shape == (2,)
-    assert processed["scores"].shape == (2,) 
-    # max_detections=2이므로 최종 예측은 최대 2개만 남아야 한다.
-    # score 0.2인 예측은 conf_threshold=0.25보다 낮으므로 제거되어야 한다.
+    assert processed["scores"].shape == (2,)
+    # score 0.2는 threshold보다 낮아서 제거
+    # max_detections=2이므로 최종 예측은 2개만 남아야 한다.
 
     assert processed["scores"][0] >= processed["scores"][1]
-    # 후처리 결과는 score 기준 내림차순이어야 한다.
+    # score 기준 내림차순 정렬 확인
 
     assert processed["boxes"].dtype == torch.float32
     assert processed["labels"].dtype == torch.int64
     assert processed["scores"].dtype == torch.float32
-    # interfaces.md 형식의 dtype을 지켜야 한다.
+    # interfaces.md 형식 확인
 
-    processed_list = postprocess_predictions([prediction], config)
-    # 여러 이미지 예측을 한 번에 처리하는 helper도 같은 기준으로 동작해야 한다.
+def test_postprocess_predictions() -> None:
+    """여러 이미지 예측을 list 단위로 후처리하는 helper를 확인한다."""
+    config = PostprocessConfig(conf_threshold=0.25, max_detections=2)
+
+    processed_list = postprocess_predictions([make_mock_prediction()], config)
 
     assert len(processed_list) == 1
+    assert processed_list[0]["image_id"] == 0
     assert processed_list[0]["boxes"].shape == (2, 4)
 
-    print("postprocess mock 1-pass test passed")
+def test_postprocess_empty_prediction() -> None:
+    """threshold 통과 예측이 없을 때 빈 prediction 형식이 유지되는지 확인."""
+    prediction = {
+        "image_id": 1,
+        "boxes": torch.tensor([[10.0, 20.0, 50.0, 80.0]], dtype=torch.float32),
+        "labels": torch.tensor([1], dtype=torch.int64),
+        "scores": torch.tensor([0.1], dtype=torch.float32),
+    }
 
+    processed = postprocess_prediction(
+        prediction,
+        PostprocessConfig(conf_threshold=0.25),
+    )
 
-if __name__ == "__main__":
-    main()
+    assert processed["image_id"] == 1
+    assert processed["boxes"].shape == (0, 4)
+    assert processed["labels"].shape == (0,)
+    assert processed["scores"].shape == (0,)
+    assert processed["boxes"].dtype == torch.float32
+    assert processed["labels"].dtype == torch.int64
+    assert processed["scores"].dtype == torch.float32

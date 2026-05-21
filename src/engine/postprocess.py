@@ -20,7 +20,7 @@ class PostprocessConfig:
   """
   conf_threshold: float = 0.5
   iou_threshold: float = 0.7
-  max_detections: int = 100
+  max_detections: int = 4
 
 def postprocess_prediction(
     prediction: Prediction,
@@ -65,7 +65,7 @@ def postprocess_prediction(
   # boxes는 규칙상 xyxy 좌표다.  
   }
 def postprocess_predictions(
-    prediction: list[Prediction],
+    predictions: list[Prediction],
     config: PostprocessConfig | None = None,
 ) -> list[Prediction]:
   """여러 이미지 예측 한 번에 후처리
@@ -76,7 +76,7 @@ def postprocess_predictions(
 
   return [
     postprocess_prediction(prediction=prediction, config=config)
-    for prediction in prediction
+    for prediction in predictions
   ]
 
 def make_empty_prediction(image_id: int) -> Prediction:
