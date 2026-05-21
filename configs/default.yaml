@@ -1,3 +1,9 @@
+# null 체크 대상 필드 목록 — 여기에 등록된 필드만 validate_config()가 검사
+_required:
+  - model.num_classes
+  - data.nc
+  - data.names
+
 model:
   name: yolov8n          # yolov8n / yolov8s / yolov8m / yolov8l
   num_classes: null      # EDA 후 확정
