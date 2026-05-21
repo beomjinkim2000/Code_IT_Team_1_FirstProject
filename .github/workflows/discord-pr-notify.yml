@@ -22,24 +22,41 @@ jobs:
       - name: Send Discord notification
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_MERGED_BY: ${{ github.event.pull_request.merged_by.login }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          REVIEW_STATE: ${{ github.event.review.state }}
+          REVIEW_URL: ${{ github.event.review.html_url }}
+          REVIEW_BODY: ${{ github.event.review.body }}
+          REVIEW_USER: ${{ github.event.review.user.login }}
+          COMMENT_URL: ${{ github.event.comment.html_url }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          COMMENT_USER: ${{ github.event.comment.user.login }}
+          GH_EVENT_NAME: ${{ github.event_name }}
+          GH_ACTION: ${{ github.event.action }}
+          GH_MERGED: ${{ github.event.pull_request.merged }}
+          DRY_RUN: ${{ inputs.dry_run }}
         run: |
-          EVENT="${{ github.event_name }}"
-          ACTION="${{ github.event.action }}"
-          MERGED="${{ github.event.pull_request.merged }}"
-          DRY_RUN="${{ inputs.dry_run }}"
+          EVENT="$GH_EVENT_NAME"
+          ACTION="$GH_ACTION"
+          MERGED="$GH_MERGED"
 
           if [ "$EVENT" = "pull_request" ] && [ "$ACTION" = "closed" ] && [ "$MERGED" = "true" ]; then
             TITLE="✅ PR이 머지됐습니다!"
             COLOR=3066993
-            DESC="[${{ github.event.pull_request.title }}](${{ github.event.pull_request.html_url }})"
-            EXTRA_FIELD=", { \"name\": \"머지한 사람\", \"value\": \"${{ github.event.pull_request.merged_by.login }}\", \"inline\": true }"
-            RAW_BODY="${{ github.event.pull_request.body }}"
+            DESC="[${PR_TITLE}](${PR_URL})"
+            EXTRA_FIELD=", { \"name\": \"머지한 사람\", \"value\": \"${PR_MERGED_BY}\", \"inline\": true }"
+            RAW_BODY="$PR_BODY"
 
           elif [ "$EVENT" = "pull_request" ] && [ "$ACTION" = "closed" ]; then
             exit 0
 
           elif [ "$EVENT" = "pull_request_review" ]; then
-            STATE="${{ github.event.review.state }}"
+            STATE="$REVIEW_STATE"
             if [ "$STATE" = "approved" ]; then
               TITLE="✅ PR이 승인됐습니다!"
               COLOR=3066993
@@ -50,23 +67,23 @@ jobs:
               TITLE="💬 PR에 리뷰가 달렸습니다"
               COLOR=16776960
             fi
-            DESC="[${{ github.event.pull_request.title }}](${{ github.event.review.html_url }})"
-            EXTRA_FIELD=", { \"name\": \"리뷰어\", \"value\": \"${{ github.event.review.user.login }}\", \"inline\": true }"
-            RAW_BODY="${{ github.event.review.body }}"
+            DESC="[${PR_TITLE}](${REVIEW_URL})"
+            EXTRA_FIELD=", { \"name\": \"리뷰어\", \"value\": \"${REVIEW_USER}\", \"inline\": true }"
+            RAW_BODY="$REVIEW_BODY"
 
           elif [ "$EVENT" = "pull_request_review_comment" ]; then
             TITLE="💬 PR 코드에 인라인 댓글이 달렸습니다"
             COLOR=16776960
-            DESC="[${{ github.event.pull_request.title }}](${{ github.event.comment.html_url }})"
-            EXTRA_FIELD=", { \"name\": \"리뷰어\", \"value\": \"${{ github.event.comment.user.login }}\", \"inline\": true }"
-            RAW_BODY="${{ github.event.comment.body }}"
+            DESC="[${PR_TITLE}](${COMMENT_URL})"
+            EXTRA_FIELD=", { \"name\": \"리뷰어\", \"value\": \"${COMMENT_USER}\", \"inline\": true }"
+            RAW_BODY="$COMMENT_BODY"
 
           else
             TITLE="🔔 새 PR이 열렸습니다!"
             COLOR=5814783
-            DESC="[${{ github.event.pull_request.title }}](${{ github.event.pull_request.html_url }})"
+            DESC="[${PR_TITLE}](${PR_URL})"
             EXTRA_FIELD=""
-            RAW_BODY="${{ github.event.pull_request.body }}"
+            RAW_BODY="$PR_BODY"
           fi
 
           # 코드 블록 제거 + 200자 truncate + 스포일러 처리
@@ -98,9 +115,9 @@ jobs:
                 \"description\": \"$DESC\",
                 \"color\": $COLOR,
                 \"fields\": [
-                  { \"name\": \"작성자\", \"value\": \"${{ github.event.pull_request.user.login }}\", \"inline\": true }
+                  { \"name\": \"작성자\", \"value\": \"${PR_AUTHOR}\", \"inline\": true }
                   $EXTRA_FIELD,
-                  { \"name\": \"브랜치\", \"value\": \"\`${{ github.event.pull_request.head.ref }}\` → \`${{ github.event.pull_request.base.ref }}\`\", \"inline\": false },
+                  { \"name\": \"브랜치\", \"value\": \"\`${PR_HEAD_REF}\` → \`${PR_BASE_REF}\`\", \"inline\": false },
                   $BODY_FIELD_OBJ
                 ],
                 \"footer\": { \"text\": \"GitHub Actions\" }
