@@ -1,4 +1,6 @@
 # 데이터 (용량 크고 공유 불가)
+data/raw/*
+!data/raw/.gitkeep
 data/augmented/
 
 # 모델 가중치
@@ -23,3 +25,6 @@ __pycache__/
 # Claude Code
 .claude/
 CLAUDE.md
+
+# 로컬 문서 (개인 보고서/메모)
+docs/
