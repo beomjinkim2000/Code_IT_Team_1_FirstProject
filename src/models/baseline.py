@@ -30,9 +30,9 @@ def _adapt_num_classes(model: nn.Module, num_classes: int) -> None:
     model.names = {i: str(i) for i in range(num_classes)}
     #model.names = {i: name for i, name in enumerate(class_names)}      #class_names가 작성되면 해당 코드로 수정
 
+def build_model(model_name: str, num_classes: int) -> torch.nn.Module:      #추후 default.yaml 완성 시 해당 줄 삭제
+#build_model(cfg)       #위 줄 삭제 시 해당 줄 활성화
 
-#def build_model(num_classes: int) -> torch.nn.Module:
-def build_model(model_name: str, num_classes: int) -> torch.nn.Module:
     yolo = YOLO(f"{model_name}.pt")
     model = yolo.model
 
