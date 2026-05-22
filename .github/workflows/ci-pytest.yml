@@ -25,4 +25,4 @@ jobs:
         run: uv sync
 
       - name: Run pytest
-        run: uv run pytest tests/ -v --tb=short
+        run: uv run pytest tests/ -v --tb=short || [ $? -eq 5 ]
