@@ -3,16 +3,18 @@ _required:
   - model.num_classes
   - data.nc
   - data.names
+  - data.class_mapping
 
 model:
   name: yolov8n          # yolov8n / yolov8s / yolov8m / yolov8l
-  num_classes: null      # EDA 후 확정
+  num_classes: null      # class_mapping에서 자동 설정
 
 data:
   train: data/processed/images/train
   val: data/processed/images/val
-  nc: null               # EDA 후 확정
-  names: []              # EDA 후 확정
+  class_mapping: configs/class_mapping.json
+  nc: null               # class_mapping에서 자동 설정
+  names: []              # class_mapping에서 자동 설정
 
 train:
   epochs: 50
