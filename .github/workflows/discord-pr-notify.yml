@@ -50,7 +50,7 @@ jobs:
             COLOR=3066993
             DESC="[${PR_TITLE}](${PR_URL})"
             EXTRA_NAME="머지한 사람"
-            EXTRA_VALUE="$PR_MERGED_BY"
+            EXTRA_VALUE="${PR_MERGED_BY}"
             RAW_BODY="$PR_BODY"
 
           elif [ "$EVENT" = "pull_request" ] && [ "$ACTION" = "closed" ]; then
@@ -70,7 +70,7 @@ jobs:
             fi
             DESC="[${PR_TITLE}](${REVIEW_URL})"
             EXTRA_NAME="리뷰어"
-            EXTRA_VALUE="$REVIEW_USER"
+            EXTRA_VALUE="${REVIEW_USER}"
             RAW_BODY="$REVIEW_BODY"
 
           elif [ "$EVENT" = "pull_request_review_comment" ]; then
@@ -78,7 +78,7 @@ jobs:
             COLOR=16776960
             DESC="[${PR_TITLE}](${COMMENT_URL})"
             EXTRA_NAME="리뷰어"
-            EXTRA_VALUE="$COMMENT_USER"
+            EXTRA_VALUE="${COMMENT_USER}"
             RAW_BODY="$COMMENT_BODY"
 
           else
@@ -90,59 +90,39 @@ jobs:
             RAW_BODY="$PR_BODY"
           fi
 
-          # 코드 블록 제거 + 200자 truncate
           BODY_DISPLAY=$(printf '%s' "$RAW_BODY" \
             | sed '/^```/,/^```/d' \
             | sed 's/`[^`]*`//g' \
             | tr '\n' ' ' \
-            | sed 's/  */ /g' \
-            | sed 's/^ //;s/ $//')
+            | sed 's/  */ /g;s/^ //;s/ $//')
           if [ ${#BODY_DISPLAY} -gt 200 ]; then
             BODY_DISPLAY="${BODY_DISPLAY:0:200}..."
           fi
 
-          # Python으로 JSON 안전하게 생성
-          PAYLOAD=$(NOTIF_TITLE="$TITLE" \
-            NOTIF_COLOR="$COLOR" \
-            NOTIF_DESC="$DESC" \
-            NOTIF_EXTRA_NAME="$EXTRA_NAME" \
-            NOTIF_EXTRA_VALUE="$EXTRA_VALUE" \
-            NOTIF_BODY="$BODY_DISPLAY" \
-            python3 << 'PYEOF'
-import json, os
-
-title = os.environ.get('NOTIF_TITLE', '')
-color = int(os.environ.get('NOTIF_COLOR', '0'))
-desc = os.environ.get('NOTIF_DESC', '')
-extra_name = os.environ.get('NOTIF_EXTRA_NAME', '')
-extra_value = os.environ.get('NOTIF_EXTRA_VALUE', '')
-pr_author = os.environ.get('PR_AUTHOR', '')
-pr_head_ref = os.environ.get('PR_HEAD_REF', '')
-pr_base_ref = os.environ.get('PR_BASE_REF', '')
-body = os.environ.get('NOTIF_BODY', '')
-
-fields = []
-if pr_author:
-    fields.append({'name': '작성자', 'value': pr_author, 'inline': True})
-if extra_name and extra_value:
-    fields.append({'name': extra_name, 'value': extra_value, 'inline': True})
-if pr_head_ref:
-    fields.append({'name': '브랜치', 'value': f'`{pr_head_ref}` → `{pr_base_ref}`', 'inline': False})
-if body:
-    fields.append({'name': '내용', 'value': f'||{body}||', 'inline': False})
-
-payload = {
-    'embeds': [{
-        'title': title,
-        'description': desc,
-        'color': color,
-        'fields': fields,
-        'footer': {'text': 'GitHub Actions'}
-    }]
-}
-print(json.dumps(payload, ensure_ascii=False))
-PYEOF
-          )
+          PAYLOAD=$(jq -n \
+            --arg title "$TITLE" \
+            --argjson color "$COLOR" \
+            --arg desc "$DESC" \
+            --arg author "$PR_AUTHOR" \
+            --arg head_ref "$PR_HEAD_REF" \
+            --arg base_ref "$PR_BASE_REF" \
+            --arg body "$BODY_DISPLAY" \
+            --arg extra_name "$EXTRA_NAME" \
+            --arg extra_value "$EXTRA_VALUE" \
+            '{
+              embeds: [{
+                title: $title,
+                description: $desc,
+                color: $color,
+                fields: (
+                  (if $author != "" then [{"name": "작성자", "value": $author, "inline": true}] else [] end) +
+                  (if ($extra_name != "" and $extra_value != "") then [{"name": $extra_name, "value": $extra_value, "inline": true}] else [] end) +
+                  (if $head_ref != "" then [{"name": "브랜치", "value": ("`" + $head_ref + "` → `" + $base_ref + "`"), "inline": false}] else [] end) +
+                  (if $body != "" then [{"name": "내용", "value": ("||" + $body + "||"), "inline": false}] else [] end)
+                ),
+                footer: {"text": "GitHub Actions"}
+              }]
+            }')
 
           if [ "$DRY_RUN" = "true" ]; then
             echo "[DRY RUN] Discord 알림 생략"

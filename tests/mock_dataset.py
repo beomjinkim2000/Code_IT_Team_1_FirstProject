@@ -5,20 +5,15 @@ validate_dataset 테스트용 Mock 데이터셋.
   1. 자기 dataset.py가 올바른 형식을 반환하는지 확인할 때 기준으로 삼기
   2. validate_dataset 자체가 각 조건을 제대로 잡는지 확인
 
-실행:
-  python tests/mock_dataset.py
+다른 파일에서 임포트:
+  from tests.mock_dataset import MockDataset
+  ds = MockDataset(size=4, img_size=640, num_classes=10)
 """
 
 import random
-import sys
-import os
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import torch
 from torch.utils.data import Dataset
-
-from src.utils.validate import validate_dataset
 
 
 class MockDataset(Dataset):
@@ -93,55 +88,3 @@ class MockDataset(Dataset):
             labels = torch.randint(0, self.num_classes, (n,), dtype=torch.int64)
 
         return {"boxes": boxes, "labels": labels, "image_id": idx}
-
-
-# ── 테스트 실행 ───────────────────────────────────────────────────────────────
-
-def run(img_size: int = 640) -> None:
-    print("=" * 55)
-    print(" validate_dataset Mock 테스트")
-    print("=" * 55)
-
-    # ── 정상 케이스 ───────────────────────────────────────────
-    print("\n[1] 정상 형식 — 모든 조건 통과해야 함")
-    validate_dataset(MockDataset(img_size=img_size), img_size)
-
-    # ── 필수 조건 위반 (AssertionError 예상) ──────────────────
-    hard_rules = [
-        ("not_tensor",    "torch.Tensor가 아닌 경우"),
-        ("wrong_ndim",    "차원이 잘못된 경우"),
-        ("wrong_channel", "채널 수가 3이 아닌 경우"),
-        ("wrong_size",    "H, W가 32배수 아닌 경우"),
-    ]
-
-    print("\n[2] 필수 조건 위반 — AssertionError가 발생해야 정상")
-    for rule, desc in hard_rules:
-        ds = MockDataset(img_size=img_size, break_rule=rule)
-        try:
-            validate_dataset(ds, img_size)
-            print(f"  ❌ FAIL  {desc} → 에러가 나야 하는데 통과됨")
-        except AssertionError:
-            print(f"  ✅ PASS  {desc}")
-
-    # ── 권장 조건 위반 (warning만, 통과 예상) ─────────────────
-    soft_rules = [
-        ("wrong_dtype",  "dtype이 float32 아닌 경우 (warning)"),
-        ("wrong_range",  "값 범위가 0~1 벗어난 경우 (warning)"),
-    ]
-
-    print("\n[3] 권장 조건 위반 — warning 출력 후 통과해야 정상")
-    for rule, desc in soft_rules:
-        ds = MockDataset(img_size=img_size, break_rule=rule)
-        try:
-            validate_dataset(ds, img_size)
-            print(f"  ✅ PASS  {desc}")
-        except AssertionError:
-            print(f"  ❌ FAIL  {desc} → warning이어야 하는데 에러 발생")
-
-    print("\n" + "=" * 55)
-    print(" 테스트 완료")
-    print("=" * 55)
-
-
-if __name__ == "__main__":
-    run()
