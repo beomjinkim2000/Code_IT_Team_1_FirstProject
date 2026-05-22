@@ -57,6 +57,8 @@ class PillDataset(Dataset):
         if not self.image_dir.exists():
             raise FileNotFoundError(f"Image directory not found: {self.image_dir}")
 
+        # JSON 전체 재스캔을 줄이기 위해, 외부에서 한 번 로드한 annotations를 주입받을 수 있게 했다.
+        # 기존: Dataset 생성마다 train_annotations 전체 탐색 -> 현재: annotations 인자 재사용 가능.
         # train/val은 정답 annotation을 사용하고, test는 제출용 이미지라 빈 target으로 처리한다.
         if split == "test":
             self.annotations = {}
@@ -163,6 +165,8 @@ class PillDataset(Dataset):
 
     @staticmethod
     def _image_to_tensor(image: Any) -> Tensor:
+        # 기존: np.asarray(image, dtype=np.float32) / 255.0 수동 변환.
+        # 현재: torchvision to_tensor로 [C,H,W] 변환과 0~1 scaling을 표준 함수에 맡긴다.
         return to_tensor(image)
 
     @staticmethod
