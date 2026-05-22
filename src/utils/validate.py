@@ -32,7 +32,7 @@ def _importable(name: str) -> bool:
 
 # ── 이미지 단일 검사 ──────────────────────────────────────────────────────────
 
-def _check_image(image: Tensor, idx: int) -> Tuple[List[str], List[str]]:
+def _check_image(image: Tensor, idx: int, img_size: int) -> Tuple[List[str], List[str]]:
     """
     Returns (errors, warnings).
     errors   → 필수 조건 위반, 학습 불가
@@ -59,9 +59,9 @@ def _check_image(image: Tensor, idx: int) -> Tuple[List[str], List[str]]:
     if C != 3:
         errors.append(f"[idx={idx}] 채널 수가 3이 아님: C={C}")
 
-    # 4. H, W가 32배수인가?
-    if H % 32 != 0 or W % 32 != 0:
-        errors.append(f"[idx={idx}] H, W가 32의 배수가 아님: {H}x{W}")
+    # 4. H, W가 img_size와 일치하는가?
+    if H != img_size or W != img_size:
+        errors.append(f"[idx={idx}] 이미지 크기가 {img_size}x{img_size}가 아님: {H}x{W}")
 
     # 5. dtype float32? (권장)
     if image.dtype != torch.float32:
@@ -85,6 +85,7 @@ def validate_dataset(dataset: Dataset, img_size: int, sample_size: int = 10) -> 
     check_packages()
 
     total = len(dataset)
+    assert total > 0, "데이터셋이 비어있음 (len=0)"
     sample_indices = random.sample(range(total), min(sample_size, total))
 
     # ── Stage 1 ──────────────────────────────────────────────────────────────
@@ -103,7 +104,7 @@ def _run_checks(dataset: Dataset, indices, img_size: int, stage: int) -> None:
 
     for idx in indices:
         image, _ = dataset[idx]
-        errors, warns = _check_image(image, idx)
+        errors, warns = _check_image(image, idx, img_size)
         all_warns.extend(warns)
 
         if errors:
@@ -124,7 +125,7 @@ def validate_batch(images: List[Tensor], targets: List[Dict], img_size: int) -> 
         f"images({len(images)})와 targets({len(targets)}) 개수 불일치"
 
     for i, (image, target) in enumerate(zip(images, targets)):
-        errors, warns = _check_image(image, i)
+        errors, warns = _check_image(image, i, img_size)
         for msg in warns:
             warnings.warn(msg)
         if errors:
