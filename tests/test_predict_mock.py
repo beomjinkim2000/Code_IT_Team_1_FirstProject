@@ -1,8 +1,8 @@
-"""MockDataset에서 이미지 2장 가져오기
-DataLoader로 batch 만들기
-DummyModel로 가짜 model forward 실행
-predict_batch()가 raw prediction 반환하는지 확인
-predict_images()가 interfaces.md 형식의 dummy prediction 반환하는지 확인
+"""MockDataset 기반 predict_batch 테스트.
+
+MockDataset에서 이미지 batch를 만들고,
+DummyModel로 가짜 model forward를 실행해
+predict_batch()가 raw output을 반환하는지 확인한다.
 """
 
 
