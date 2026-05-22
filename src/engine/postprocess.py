@@ -59,8 +59,8 @@ def postprocess_prediction(
   return {
     "image_id": int(prediction["image_id"]),
     "boxes": boxes[order].to(dtype=torch.float32),
-    "scores": scores[order].to(dtype=torch.float32),
     "labels": labels[order].to(dtype=torch.int64),
+    "scores": scores[order].to(dtype=torch.float32),
   # dtype을 고정 interfaces.md 지킨다.
   # boxes는 규칙상 xyxy 좌표다.  
   }
