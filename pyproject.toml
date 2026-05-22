@@ -15,13 +15,18 @@ dependencies = [
     "torch>=2.12.0",
     "torchvision>=0.27.0",
     "ultralytics>=8.4.51",
+
+    "kagglehub>=1.0.1",
+
     "kaggle>=2.1.2",
+
 ]
 
 [dependency-groups]
 dev = [
     "ipykernel>=7.2.0",
     "jupyter>=1.1.1",
+    "pytest>=8.0.0",
 ]
 
 [tool.uv]
