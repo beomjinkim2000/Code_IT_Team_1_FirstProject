@@ -1,0 +1,285 @@
+{
+  "num_classes": 56,
+  "classes": [
+    {
+      "class_id": 0,
+      "category_id": 1900,
+      "name": "보령부스파정 5mg"
+    },
+    {
+      "class_id": 1,
+      "category_id": 2483,
+      "name": "뮤테란캡슐 100mg"
+    },
+    {
+      "class_id": 2,
+      "category_id": 3351,
+      "name": "일양하이트린정 2mg"
+    },
+    {
+      "class_id": 3,
+      "category_id": 3483,
+      "name": "기넥신에프정(은행엽엑스)(수출용)"
+    },
+    {
+      "class_id": 4,
+      "category_id": 3544,
+      "name": "무코스타정(레바미피드)(비매품)"
+    },
+    {
+      "class_id": 5,
+      "category_id": 3743,
+      "name": "알드린정"
+    },
+    {
+      "class_id": 6,
+      "category_id": 3832,
+      "name": "뉴로메드정(옥시라세탐)"
+    },
+    {
+      "class_id": 7,
+      "category_id": 4543,
+      "name": "에어탈정(아세클로페낙)"
+    },
+    {
+      "class_id": 8,
+      "category_id": 12081,
+      "name": "리렉스펜정 300mg/PTP"
+    },
+    {
+      "class_id": 9,
+      "category_id": 12247,
+      "name": "아빌리파이정 10mg"
+    },
+    {
+      "class_id": 10,
+      "category_id": 12778,
+      "name": "다보타민큐정 10mg/병"
+    },
+    {
+      "class_id": 11,
+      "category_id": 13395,
+      "name": "써스펜8시간이알서방정 650mg"
+    },
+    {
+      "class_id": 12,
+      "category_id": 13900,
+      "name": "에빅사정(메만틴염산염)(비매품)"
+    },
+    {
+      "class_id": 13,
+      "category_id": 16232,
+      "name": "리피토정 20mg"
+    },
+    {
+      "class_id": 14,
+      "category_id": 16262,
+      "name": "크레스토정 20mg"
+    },
+    {
+      "class_id": 15,
+      "category_id": 16548,
+      "name": "가바토파정 100mg"
+    },
+    {
+      "class_id": 16,
+      "category_id": 16551,
+      "name": "동아가바펜틴정 800mg"
+    },
+    {
+      "class_id": 17,
+      "category_id": 16688,
+      "name": "오마코연질캡슐(오메가-3-산에틸에스테르90)"
+    },
+    {
+      "class_id": 18,
+      "category_id": 18147,
+      "name": "리리카캡슐 150mg"
+    },
+    {
+      "class_id": 19,
+      "category_id": 18357,
+      "name": "종근당글리아티린연질캡슐(콜린알포세레이트) "
+    },
+    {
+      "class_id": 20,
+      "category_id": 19232,
+      "name": "콜리네이트연질캡슐 400mg"
+    },
+    {
+      "class_id": 21,
+      "category_id": 19552,
+      "name": "트루비타정 60mg/병"
+    },
+    {
+      "class_id": 22,
+      "category_id": 19607,
+      "name": "스토가정 10mg"
+    },
+    {
+      "class_id": 23,
+      "category_id": 19861,
+      "name": "노바스크정 5mg"
+    },
+    {
+      "class_id": 24,
+      "category_id": 20014,
+      "name": "마도파정"
+    },
+    {
+      "class_id": 25,
+      "category_id": 20238,
+      "name": "플라빅스정 75mg"
+    },
+    {
+      "class_id": 26,
+      "category_id": 20877,
+      "name": "엑스포지정 5/160mg"
+    },
+    {
+      "class_id": 27,
+      "category_id": 21325,
+      "name": "아토르바정 10mg"
+    },
+    {
+      "class_id": 28,
+      "category_id": 21771,
+      "name": "라비에트정 20mg"
+    },
+    {
+      "class_id": 29,
+      "category_id": 22074,
+      "name": "리피로우정 20mg"
+    },
+    {
+      "class_id": 30,
+      "category_id": 22347,
+      "name": "자누비아정 50mg"
+    },
+    {
+      "class_id": 31,
+      "category_id": 22362,
+      "name": "맥시부펜이알정 300mg"
+    },
+    {
+      "class_id": 32,
+      "category_id": 24850,
+      "name": "놀텍정 10mg"
+    },
+    {
+      "class_id": 33,
+      "category_id": 25367,
+      "name": "자누메트정 50/850mg"
+    },
+    {
+      "class_id": 34,
+      "category_id": 25438,
+      "name": "큐시드정 31.5mg/PTP"
+    },
+    {
+      "class_id": 35,
+      "category_id": 25469,
+      "name": "아모잘탄정 5/100mg"
+    },
+    {
+      "class_id": 36,
+      "category_id": 27733,
+      "name": "트윈스타정 40/5mg"
+    },
+    {
+      "class_id": 37,
+      "category_id": 27777,
+      "name": "카나브정 60mg"
+    },
+    {
+      "class_id": 38,
+      "category_id": 27926,
+      "name": "울트라셋이알서방정"
+    },
+    {
+      "class_id": 39,
+      "category_id": 27993,
+      "name": "졸로푸트정 100mg"
+    },
+    {
+      "class_id": 40,
+      "category_id": 28763,
+      "name": "트라젠타정(리나글립틴)"
+    },
+    {
+      "class_id": 41,
+      "category_id": 29345,
+      "name": "비모보정 500/20mg"
+    },
+    {
+      "class_id": 42,
+      "category_id": 29451,
+      "name": "레일라정"
+    },
+    {
+      "class_id": 43,
+      "category_id": 29667,
+      "name": "리바로정 4mg"
+    },
+    {
+      "class_id": 44,
+      "category_id": 30308,
+      "name": "트라젠타듀오정 2.5/850mg"
+    },
+    {
+      "class_id": 45,
+      "category_id": 31863,
+      "name": "아질렉트정(라사길린메실산염)"
+    },
+    {
+      "class_id": 46,
+      "category_id": 31885,
+      "name": "자누메트엑스알서방정 100/1000mg"
+    },
+    {
+      "class_id": 47,
+      "category_id": 32310,
+      "name": "글리아타민연질캡슐"
+    },
+    {
+      "class_id": 48,
+      "category_id": 33009,
+      "name": "신바로정"
+    },
+    {
+      "class_id": 49,
+      "category_id": 33208,
+      "name": "에스원엠프정 20mg"
+    },
+    {
+      "class_id": 50,
+      "category_id": 33880,
+      "name": "글리틴정(콜린알포세레이트)"
+    },
+    {
+      "class_id": 51,
+      "category_id": 34597,
+      "name": "제미메트서방정 50/1000mg"
+    },
+    {
+      "class_id": 52,
+      "category_id": 35206,
+      "name": "아토젯정 10/40mg"
+    },
+    {
+      "class_id": 53,
+      "category_id": 36637,
+      "name": "로수젯정10/5밀리그램"
+    },
+    {
+      "class_id": 54,
+      "category_id": 38162,
+      "name": "로수바미브정 10/20mg"
+    },
+    {
+      "class_id": 55,
+      "category_id": 41768,
+      "name": "카발린캡슐 25mg"
+    }
+  ]
+}
