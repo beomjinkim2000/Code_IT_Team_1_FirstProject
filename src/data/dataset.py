@@ -126,6 +126,14 @@ class PillDataset(Dataset):
                 image_id = int(annotation["image_id"])
                 image_info = images_by_id[image_id]
                 file_name = image_info["file_name"]
+
+                # EDA에서 발견된 이상치(bbox_x=6567 오기입 등) 방어: 이미지 범위 밖 bbox 스킵
+                x, y, w, h = annotation["bbox"]
+                img_w = image_info.get("width", float("inf"))
+                img_h = image_info.get("height", float("inf"))
+                if x < 0 or y < 0 or w <= 0 or h <= 0 or x + w > img_w or y + h > img_h:
+                    continue
+
                 # 실제 데이터는 한 이미지의 여러 알약 annotation이 여러 JSON에 흩어져 있어 file_name 기준으로 합친다.
                 item = annotations_by_file.setdefault(
                     file_name,

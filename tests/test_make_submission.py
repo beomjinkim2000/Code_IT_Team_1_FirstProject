@@ -39,10 +39,13 @@ def make_mock_predictions() -> list[dict]:
     ]
 
 
+_MOCK_LABEL_TO_CATEGORY: dict[int, int] = {3: 3, 4: 4}
+
+
 def test_predictions_to_rows_converts_xyxy_to_xywh() -> None:
     """Prediction list가 Kaggle 제출 row 형식으로 변환되는지 확인"""
 
-    rows = predictions_to_rows(make_mock_predictions())
+    rows = predictions_to_rows(make_mock_predictions(), _MOCK_LABEL_TO_CATEGORY)
 
     assert len(rows) == 2
 
@@ -68,6 +71,7 @@ def test_predictions_to_rows_keeps_custom_start_annotation_id() -> None:
 
     rows = predictions_to_rows(
         make_mock_predictions(),
+        _MOCK_LABEL_TO_CATEGORY,
         start_annotation_id=100,
     )
 
@@ -82,6 +86,7 @@ def test_make_submission_writes_csv(tmp_path: Path) -> None:
 
     saved_path = make_submission(
         predictions=make_mock_predictions(),
+        label_to_category=_MOCK_LABEL_TO_CATEGORY,
         output_path=output_path,
     )
 
@@ -111,6 +116,7 @@ def test_make_submission_allows_empty_predictions(tmp_path: Path) -> None:
                 "scores": torch.empty((0,), dtype=torch.float32),
             }
         ],
+        label_to_category={},
         output_path=output_path,
     )
 
