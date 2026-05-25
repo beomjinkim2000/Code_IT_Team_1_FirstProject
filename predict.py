@@ -57,6 +57,16 @@ def main():
         image_ids = [t["image_id"] for t in targets]
         raw = predict_batch(model, batch, device)
         preds = postprocess_raw_outputs(raw, image_ids=image_ids, config=postprocess_cfg)
+
+        # 모델 입력(img_size×img_size) 좌표 → 원본 이미지 좌표로 스케일백
+        for pred, target in zip(preds, targets):
+            orig_h, orig_w = target["original_size"]
+            scale_x = orig_w / img_size
+            scale_y = orig_h / img_size
+            if len(pred["boxes"]) > 0:
+                pred["boxes"][:, [0, 2]] *= scale_x
+                pred["boxes"][:, [1, 3]] *= scale_y
+
         all_predictions.extend(preds)
 
     # predictions.json 저장
