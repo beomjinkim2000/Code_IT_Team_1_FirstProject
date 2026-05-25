@@ -73,26 +73,28 @@ def main():
     criterion = v8DetectionLoss(model)
     postprocess_cfg = PostprocessConfig(**cfg["postprocess"])
 
+    total_epochs = cfg["train"]["epochs"]
     best_mAP = -1.0
-    for epoch in range(1, cfg["train"]["epochs"] + 1):
+    for epoch in range(1, total_epochs + 1):
         model.train()
         train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
 
-        model.eval()
-        predictions, targets = _collect_val_predictions(model, val_loader, device, postprocess_cfg)
-        val_mAP = evaluate(predictions, targets)["mAP"]
+        # 마지막 에폭에서만 val mAP 계산 (매 에폭 eval은 느려서 마지막에만)
+        if epoch == total_epochs:
+            model.eval()
+            predictions, targets = _collect_val_predictions(model, val_loader, device, postprocess_cfg)
+            val_mAP = evaluate(predictions, targets)["mAP"]
+        else:
+            val_mAP = 0.0
 
-        is_best = val_mAP > best_mAP
-        if is_best:
-            best_mAP = val_mAP
-
+        is_best = epoch == total_epochs  # 마지막 에폭을 best로 저장
         save_checkpoint(
             model, optimizer, epoch, val_mAP,
             checkpoint_dir=cfg["paths"]["checkpoint"],
             is_best=is_best,
         )
 
-        print(f"[{epoch:03d}/{cfg['train']['epochs']:03d}] loss: {train_loss:.4f}  val_mAP: {val_mAP:.4f}")
+        print(f"[{epoch:03d}/{total_epochs:03d}] loss: {train_loss:.4f}  val_mAP: {val_mAP:.4f}")
 
     print(f"학습 완료. best_mAP: {best_mAP:.4f}")
 

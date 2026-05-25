@@ -75,7 +75,7 @@ def test_pill_dataset_returns_expected_target_contract(tmp_path: Path) -> None:
     assert image.dtype == torch.float32
     assert 0.0 <= float(image.min()) <= float(image.max()) <= 1.0
 
-    assert set(target) == {"boxes", "labels", "image_id"}
+    assert set(target) == {"boxes", "labels", "image_id", "original_size"}
 
     boxes = target["boxes"]
     labels = target["labels"]
