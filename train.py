@@ -6,6 +6,7 @@ from tqdm import tqdm
 from ultralytics.utils.loss import v8DetectionLoss
 
 from src.data.dataset import PillDataset
+from src.data.transforms import train_transform, val_transform
 from src.engine.checkpoint import save_checkpoint
 from src.engine.evaluate import evaluate
 from src.engine.postprocess import PostprocessConfig, postprocess_raw_outputs
@@ -39,6 +40,7 @@ def main():
 
     cfg = load_config(args.config)
     set_seed(cfg["train"]["seed"])
+    img_size = cfg["train"]["img_size"]
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"device: {device}")
@@ -49,8 +51,8 @@ def main():
     annotations = PillDataset.load_annotations()
     category_to_label = cfg["data"]["category_to_label"]
 
-    train_ds = PillDataset(split="train", annotations=annotations, category_to_label=category_to_label)
-    val_ds   = PillDataset(split="val",   annotations=annotations, category_to_label=category_to_label)
+    train_ds = PillDataset(split="train", annotations=annotations, category_to_label=category_to_label, transforms=train_transform(img_size))
+    val_ds   = PillDataset(split="val",   annotations=annotations, category_to_label=category_to_label, transforms=val_transform(img_size))
 
     train_loader = DataLoader(
         train_ds,
@@ -71,7 +73,7 @@ def main():
     criterion = v8DetectionLoss(model)
     postprocess_cfg = PostprocessConfig(**cfg["postprocess"])
 
-    best_mAP = 0.0
+    best_mAP = -1.0
     for epoch in range(1, cfg["train"]["epochs"] + 1):
         model.train()
         train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
