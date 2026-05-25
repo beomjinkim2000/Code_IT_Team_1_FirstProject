@@ -7,9 +7,6 @@ on:
     types: [submitted]
   pull_request_review_comment:
     types: [created]
-  workflow_run:
-    workflows: ["CI — pytest"]
-    types: [completed]
   workflow_dispatch:
     inputs:
       dry_run:
@@ -42,9 +39,6 @@ jobs:
           GH_EVENT_NAME: ${{ github.event_name }}
           GH_ACTION: ${{ github.event.action }}
           GH_MERGED: ${{ github.event.pull_request.merged }}
-          CI_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
-          CI_RUN_URL: ${{ github.event.workflow_run.html_url }}
-          CI_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
           DRY_RUN: ${{ inputs.dry_run }}
         run: |
           EVENT="$GH_EVENT_NAME"
@@ -61,20 +55,6 @@ jobs:
 
           elif [ "$EVENT" = "pull_request" ] && [ "$ACTION" = "closed" ]; then
             exit 0
-
-          elif [ "$EVENT" = "workflow_run" ]; then
-            if [ "$CI_CONCLUSION" = "failure" ]; then
-              TITLE="❌ CI 실패"
-              COLOR=15158332
-            elif [ "$CI_CONCLUSION" = "success" ]; then
-              exit 0
-            else
-              exit 0
-            fi
-            DESC="[테스트 결과 보기](${CI_RUN_URL})"
-            EXTRA_NAME="브랜치"
-            EXTRA_VALUE="\`${CI_HEAD_BRANCH}\`"
-            RAW_BODY=""
 
           elif [ "$EVENT" = "pull_request_review" ]; then
             STATE="$REVIEW_STATE"
