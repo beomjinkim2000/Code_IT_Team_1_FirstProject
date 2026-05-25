@@ -13,6 +13,8 @@ from typing import TypedDict
 import torch
 from torchvision.ops import batched_nms
 
+from src.utils.bbox import cxcywh_to_xyxy
+
 class Prediction(TypedDict):
   image_id: int
   boxes: torch.Tensor
@@ -119,24 +121,6 @@ def _extract_raw_tensor(raw_outputs: RawOutputs) -> torch.Tensor:
 
   raise TypeError("raw_outputs는 Tensor 또는 Tensor를 첫 번째 값으로 가진 tuple/list여야 합니다.")
 
-def _cxcywh_to_xyxy(boxes: torch.Tensor) -> torch.Tensor:
-  """중심점 기준 cxcywh 박스를 내부 표준 형식인 xyxy로 변환.
-
-  raw output의 bbox는 [cx, cy, w, h] 형태,
-  프로젝트 내부 bbox 규칙은 [x1, y1, x2, y2] 절대 픽셀 좌표
-  """
-  cx = boxes[:, 0]
-  cy = boxes[:, 1]
-  w = boxes[:, 2]
-  h = boxes[:, 3]
-
-  x1 = cx - w / 2
-  y1 = cy - h / 2
-  x2 = cx + w / 2
-  y2 = cy + h / 2
-
-  return torch.stack([x1, y1, x2, y2], dim=1)
-
 def _postprocess_single_raw_output(
     raw_output: torch.Tensor,
     image_id: int,
@@ -165,7 +149,7 @@ def _postprocess_single_raw_output(
   class_scores = raw_output[4:, :].transpose(0, 1)
 
   scores, labels = torch.max(class_scores, dim=1)
-  boxes = _cxcywh_to_xyxy(cxcywh_boxes).to(dtype=torch.float32)
+  boxes = cxcywh_to_xyxy(cxcywh_boxes).to(dtype=torch.float32)
   labels = labels.to(dtype=torch.int64)
   scores = scores.to(dtype=torch.float32)
 

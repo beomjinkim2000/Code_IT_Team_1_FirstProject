@@ -70,11 +70,9 @@ def train_one_epoch(
     model: nn.Module,
     dataloader: DataLoader,
     optimizer: Optimizer,
+    criterion: v8DetectionLoss,
     device,
 ) -> float:
-    model.train()
-    _prepare_loss_args(model)
-    criterion = v8DetectionLoss(model)
     total_loss = 0.0
 
     progress = tqdm(dataloader, desc="train", leave=False)      #tqdm으로 진행상황 시각화

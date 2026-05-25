@@ -38,12 +38,12 @@ class Prediction(TypedDict):
 
 def predictions_to_rows(
     predictions: list[Prediction],
+    label_to_category: dict[int, int],
     start_annotation_id: int = 1,
 ) -> list[dict[str, int | float]]:
     """pred_dict 리스트를 submission.csv 행 리스트로 변환한다.
 
-    TODO(issue 확인 필요): labels가 Kaggle category_id와 1:1로 같은지 확인해야 한다.
-    다르면 여기에서 label -> category_id 매핑을 추가해야 한다.
+    label_to_category: cfg["data"]["label_to_category"] — class_id → Kaggle category_id 매핑
     """
     rows: list[dict[str, int | float]] = []
     annotation_id = start_annotation_id
@@ -58,11 +58,12 @@ def predictions_to_rows(
 
         for box, label, score in zip(boxes_xywh, labels, scores):
             x, y, w, h = box.tolist()
+            class_id = int(label.item())
             rows.append(
                 {
                     "annotation_id": annotation_id,
                     "image_id": image_id,
-                    "category_id": int(label.item()),
+                    "category_id": label_to_category[class_id],
                     "bbox_x": float(x),
                     "bbox_y": float(y),
                     "bbox_w": float(w),
@@ -77,13 +78,14 @@ def predictions_to_rows(
 
 def make_submission(
     predictions: list[Prediction],
+    label_to_category: dict[int, int],
     output_path: str | Path = "outputs/submissions/submission_v1.csv",
 ) -> Path:
     """pred_dict 리스트를 Kaggle submission.csv로 저장한다."""
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    rows = predictions_to_rows(predictions)
+    rows = predictions_to_rows(predictions, label_to_category)
     with open(output_path, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=SUBMISSION_COLUMNS)
         writer.writeheader()
