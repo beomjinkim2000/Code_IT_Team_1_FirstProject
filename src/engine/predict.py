@@ -14,16 +14,14 @@ def predict_batch(
     images: torch.Tensor,
     device: torch.device | str,
 ) -> Any:
-   """한 배치에 모델 추론 실행 원본 모델 출력을 반환하는 함수
-    
+    """한 배치에 모델 추론 실행 원본 모델 출력을 반환하는 함수
+
     todo(issue #18): 실제 YOLO 모델 output 형식이 확정되면
     postprocess.py가 받을 수 있는 raw output 형태를 문서화
-    
+
     model.eval()은 루트 predict.py에서 수행
     """
-   
-   with torch.no_grad(): #추론에서는 그라 계산x 메모리 절약 위해 no_grad
-     images = images.to(device)
-
-     raw_outputs = model(images) #실제 모델 추론 결과
-   return raw_outputs
+    with torch.no_grad():
+        images = images.to(device)
+        raw_outputs = model(images)
+    return raw_outputs
