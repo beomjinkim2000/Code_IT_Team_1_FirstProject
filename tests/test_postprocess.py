@@ -1,27 +1,29 @@
-"""score 0.2 예측 제거
-score 높은 순서로 정렬
-max_detections=2 적용
-boxes / labels / scores shape 유지
-dtype 계약 유지
-여러 이미지용 postprocess_predictions()도 작동
+"""postprocess.py 테스트 파일
+
+테스트 목적:
+- score threshold보다 낮은 예측 제거
+- score 기준 내림차순 정렬
+- max_detections 개수 제한
+- 빈 예측 결과의 shape / dtype 유지
+- 프로젝트 공용 dummy prediction fixture와의 호환성 확인
 """
 
 import torch
 
 from src.engine.postprocess import (
-    PostprocessConfig,
-    postprocess_prediction,
-    postprocess_predictions,
+  PostprocessConfig,
+  postprocess_prediction,
+  postprocess_predictions,
+  postprocess_raw_outputs,
 )
+from tests.dummy_model import make_dummy_pred_dict, make_dummy_raw_output
 
 def make_mock_prediction() -> dict:
-    """postprocess.py 테스트에 사용할 가짜 예측 결과를 만든다.
-
-    실제 모델 예측처럼 boxes, labels, scores를 가진 dict를 반환한다.
-    scores를 일부러 [0.9, 0.2, 0.7]로 두어 confidence filtering과
-    score 정렬이 제대로 동작하는지 확인할 수 있게 한다.
-    """
-    return {
+ """후처리 규칙 명확히 롹인하기 위한 가짜 예측 결과를 생성
+  scores를 [0.9, 0.2, 0.7]로 고정해서 threshold filtering과
+    score 정렬이 제대로 동작하는지 확인한다.
+ """
+ return {
         "image_id": 0,
         "boxes": torch.tensor(
             [
@@ -36,7 +38,8 @@ def make_mock_prediction() -> dict:
     }
 
 def test_postprocess_prediction() -> None:
-    """Mock prediction 1개를 후처리해서 필터링/정렬/개수 제한을 확인."""
+    """이미지 1장 prediction의 필터링 / 정렬 / 개수 제한을 확인."""
+
     config = PostprocessConfig(
         conf_threshold=0.25,
         iou_threshold=0.7,
@@ -46,23 +49,24 @@ def test_postprocess_prediction() -> None:
     processed = postprocess_prediction(make_mock_prediction(), config)
 
     assert processed["image_id"] == 0
-
     assert processed["boxes"].shape == (2, 4)
     assert processed["labels"].shape == (2,)
     assert processed["scores"].shape == (2,)
-    # score 0.2는 threshold보다 낮아서 제거
-    # max_detections=2이므로 최종 예측은 2개만 남아야 한다.
 
-    assert processed["scores"][0] >= processed["scores"][1]
     # score 기준 내림차순 정렬 확인
+    assert processed["scores"][0] >= processed["scores"][1]
 
+    # score 0.2 예측은 threshold보다 낮아서 제거되어야 한다.
+    assert torch.all(processed["scores"] >= 0.25)
+
+    # interfaces.md 형식 확인
     assert processed["boxes"].dtype == torch.float32
     assert processed["labels"].dtype == torch.int64
     assert processed["scores"].dtype == torch.float32
-    # interfaces.md 형식 확인
 
 def test_postprocess_predictions() -> None:
-    """여러 이미지 예측을 list 단위로 후처리하는 helper를 확인한다."""
+    """여러 이미지 prediction을 list 단위로 후처리하는 helper를 확인."""
+
     config = PostprocessConfig(conf_threshold=0.25, max_detections=2)
 
     processed_list = postprocess_predictions([make_mock_prediction()], config)
@@ -72,7 +76,8 @@ def test_postprocess_predictions() -> None:
     assert processed_list[0]["boxes"].shape == (2, 4)
 
 def test_postprocess_empty_prediction() -> None:
-    """threshold 통과 예측이 없을 때 빈 prediction 형식이 유지되는지 확인."""
+    """threshold를 통과한 예측이 없을 때도 빈 prediction 형식이 유지되는지 확인"""
+
     prediction = {
         "image_id": 1,
         "boxes": torch.tensor([[10.0, 20.0, 50.0, 80.0]], dtype=torch.float32),
@@ -92,3 +97,62 @@ def test_postprocess_empty_prediction() -> None:
     assert processed["boxes"].dtype == torch.float32
     assert processed["labels"].dtype == torch.int64
     assert processed["scores"].dtype == torch.float32
+
+def test_postprocess_with_project_dummy_prediction() -> None:
+    """공용 dummy prediction fixture도 postprocess.py 입력 형식과 맞는지 확인한다."""
+
+    predictions = make_dummy_pred_dict(
+        batch_size=1,
+        num_classes=10,
+        num_detections=3,
+        start_image_id=2,
+    )
+    prediction = predictions[0]
+
+    processed = postprocess_prediction(
+        prediction,
+        PostprocessConfig(conf_threshold=0.0, max_detections=4),
+    )
+
+    assert processed["image_id"] == 2
+    assert processed["boxes"].shape[1] == 4
+    assert processed["labels"].ndim == 1
+    assert processed["scores"].ndim == 1
+    assert processed["boxes"].dtype == torch.float32
+    assert processed["labels"].dtype == torch.int64
+    assert processed["scores"].dtype == torch.float32
+
+def test_postprocess_raw_outputs_from_dummy_model_format() -> None:
+    """DummyModel raw output을 Prediction 리스트로 변환할 수 있는지 확인"""
+
+    raw_outputs = (
+        make_dummy_raw_output(
+            batch_size=2,
+            num_classes=10,
+        ),
+    )
+
+    processed_list = postprocess_raw_outputs(
+        raw_outputs=raw_outputs,
+        image_ids=[10, 11],
+        config=PostprocessConfig(
+            conf_threshold=0.99,
+            iou_threshold=0.7,
+            max_detections=4,
+        ),
+    )
+
+    assert len(processed_list) == 2
+    assert processed_list[0]["image_id"] == 10
+    assert processed_list[1]["image_id"] == 11
+
+    for processed in processed_list:
+        assert processed["boxes"].shape[1] == 4
+        assert processed["labels"].ndim == 1
+        assert processed["scores"].ndim == 1
+        assert processed["boxes"].shape[0] <= 4
+        assert processed["labels"].shape[0] <= 4
+        assert processed["scores"].shape[0] <= 4
+        assert processed["boxes"].dtype == torch.float32
+        assert processed["labels"].dtype == torch.int64
+        assert processed["scores"].dtype == torch.float32
