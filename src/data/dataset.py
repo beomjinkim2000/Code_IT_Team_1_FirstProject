@@ -93,6 +93,7 @@ class PillDataset(Dataset):
             "boxes": boxes,
             "labels": labels,
             "image_id": image_id,
+            "original_size": (image.height, image.width),  # transforms 적용 전 원본 크기
         }
 
         # resize/augmentation처럼 image와 bbox가 함께 바뀌는 작업은 transforms.py에서 처리한다.
