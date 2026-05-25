@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from src.data.dataset import PillDataset
+from src.data.transforms import val_transform
 from src.engine.postprocess import PostprocessConfig, postprocess_raw_outputs
 from src.engine.predict import predict_batch
 from src.submission.make_submission import make_submission
@@ -21,6 +22,7 @@ def main():
     args = parser.parse_args()
 
     cfg = load_config(args.config)
+    img_size = cfg["train"]["img_size"]
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"device: {device}")
 
@@ -39,7 +41,7 @@ def main():
     model.to(device)
     model.eval()
 
-    test_ds = PillDataset(split="test")
+    test_ds = PillDataset(split="test", transforms=val_transform(img_size))
     test_loader = DataLoader(
         test_ds,
         batch_size=cfg["train"]["batch_size"],
