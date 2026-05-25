@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 from ultralytics import YOLO
+from src.utils.config import load_config
 
 
 # YOLO모델 기존에 학습된 클래스를 필요한 클래스(알약) 수에 맞게 변경하는 함수
@@ -30,8 +31,10 @@ def _adapt_num_classes(model: nn.Module, num_classes: int) -> None:
     model.names = {i: str(i) for i in range(num_classes)}
     #model.names = {i: name for i, name in enumerate(class_names)}      #class_names가 작성되면 해당 코드로 수정
 
-def build_model(model_name: str, num_classes: int) -> torch.nn.Module:      #추후 default.yaml 완성 시 해당 줄 삭제
-#build_model(cfg)       #위 줄 삭제 시 해당 줄 활성화
+
+def build_model(num_classes: int) -> torch.nn.Module:
+    cfg = load_config(validate=False)
+    model_name = cfg["model"]["name"]
 
     yolo = YOLO(f"{model_name}.pt")
     model = yolo.model
