@@ -36,9 +36,9 @@ train:
   phase2_lr_min: 0.00001
 
   # --- Phase 3: backbone/neck + head 전체 fine-tune ---
-  phase3_head_lr: 0.001
-  phase3_backbone_lr_ratio: 0.1   # backbone/neck lr = phase3_head_lr × ratio
-  phase3_lr_min: 0.00001
+  phase3_head_lr: 0.0001          # Detect head lr (1e-4)
+  phase3_backbone_lr: 0.00001     # backbone/neck lr (1e-5, head의 1/10 — pretrained 특징 보존)
+  phase3_lr_min: 0.000001         # cosine 최솟값 (1e-6, 모든 param group 공통)
 
 paths:
   checkpoint: outputs/checkpoints/

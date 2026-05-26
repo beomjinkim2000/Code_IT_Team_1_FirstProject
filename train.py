@@ -1,4 +1,6 @@
 import argparse
+import csv
+from pathlib import Path
 
 import torch
 from torch.optim.lr_scheduler import CosineAnnealingLR
@@ -49,13 +51,13 @@ def _make_phase2_optimizer(model, phase2_lr):
     return torch.optim.AdamW(params, lr=phase2_lr)
 
 
-def _make_phase3_optimizer(model, lr, backbone_lr_ratio):
-    """Phase 3: backbone/neck lr*ratio, head lr 전체 fine-tune."""
+def _make_phase3_optimizer(model, head_lr, backbone_lr):
+    """Phase 3: backbone/neck, head 각각 별도 lr로 전체 fine-tune."""
     backbone_neck_params = [p for layer in list(model.model)[:-1] for p in layer.parameters()]
     head_params = list(model.model[-1].parameters())
     return torch.optim.AdamW([
-        {"params": backbone_neck_params, "lr": lr * backbone_lr_ratio},
-        {"params": head_params, "lr": lr},
+        {"params": backbone_neck_params, "lr": backbone_lr},
+        {"params": head_params, "lr": head_lr},
     ])
 
 
@@ -74,7 +76,7 @@ def main():
     phase2_lr = cfg["train"].get("phase2_lr", 0.001)
     phase2_lr_min = cfg["train"].get("phase2_lr_min", 0.00001)
     phase3_head_lr = cfg["train"].get("phase3_head_lr", 0.001)
-    phase3_backbone_lr_ratio = cfg["train"].get("phase3_backbone_lr_ratio", 0.1)
+    phase3_backbone_lr = cfg["train"].get("phase3_backbone_lr", 0.00001)
     phase3_lr_min = cfg["train"].get("phase3_lr_min", 0.00001)
     total_epochs = cfg["train"]["epochs"]
     freeze_epochs = max(1, int(total_epochs * cfg["train"].get("freeze_ratio", 0.2)))
@@ -140,6 +142,13 @@ def main():
         max_detections=cfg["postprocess"]["max_detections"],
     )
 
+    log_dir = Path("outputs/logs")
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_path = log_dir / "metrics.csv"
+    log_file = log_path.open("w", newline="")
+    log_writer = csv.DictWriter(log_file, fieldnames=["epoch", "train_loss", "box_loss", "cls_loss", "dfl_loss", "val_mAP", "val_mAP_50", "lr"])
+    log_writer.writeheader()
+
     best_mAP = -1.0
     for epoch in range(1, total_epochs + 1):
 
@@ -156,10 +165,10 @@ def main():
         elif epoch == freeze_epochs + finetune_epochs + 1:
             # Phase 3: backbone/neck까지 전체 fine-tune
             unfreeze_all(model)
-            optimizer = _make_phase3_optimizer(model, phase3_head_lr, phase3_backbone_lr_ratio)
+            optimizer = _make_phase3_optimizer(model, phase3_head_lr, phase3_backbone_lr)
             remaining = total_epochs - freeze_epochs - finetune_epochs
             scheduler = CosineAnnealingLR(optimizer, T_max=max(remaining, 1), eta_min=phase3_lr_min)
-            print(f"[{epoch:03d}] Phase 3 시작: backbone/neck lr={phase3_head_lr * phase3_backbone_lr_ratio:.5f} fine-tune")
+            print(f"[{epoch:03d}] Phase 3 시작: backbone/neck lr={phase3_backbone_lr:.6f}, head lr={phase3_head_lr:.6f}")
 
         model.train()
         train_loss, box_loss, cls_loss, dfl_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
@@ -169,7 +178,9 @@ def main():
         predictions, targets = _collect_val_predictions(
             model, val_loader, device, eval_postprocess_cfg
         )
-        val_mAP = evaluate(predictions, targets)["mAP"]
+        eval_result = evaluate(predictions, targets)
+        val_mAP = eval_result["mAP"]
+        val_mAP_50 = eval_result["mAP_50"]
 
         is_best = val_mAP > best_mAP
         if is_best:
@@ -184,11 +195,19 @@ def main():
             is_best=is_best,
         )
 
-        current_lr = scheduler.get_last_lr()[0]
+        current_lr = scheduler.get_last_lr()[-1]
+        log_writer.writerow({
+            "epoch": epoch, "train_loss": round(train_loss, 6),
+            "box_loss": round(box_loss, 6), "cls_loss": round(cls_loss, 6), "dfl_loss": round(dfl_loss, 6),
+            "val_mAP": round(val_mAP, 6), "val_mAP_50": round(val_mAP_50, 6), "lr": round(current_lr, 8),
+        })
+        log_file.flush()
         print(
-            f"[{epoch:03d}/{total_epochs:03d}] loss: {train_loss:.4f}  box: {box_loss:.4f}  cls: {cls_loss:.4f}  dfl: {dfl_loss:.4f}  val_mAP: {val_mAP:.4f}  lr: {current_lr:.6f}"
+            f"[{epoch:03d}/{total_epochs:03d}] loss: {train_loss:.4f}  box: {box_loss:.4f}  cls: {cls_loss:.4f}  dfl: {dfl_loss:.4f}"
+            f"  mAP: {val_mAP:.4f}  mAP@50: {val_mAP_50:.4f}  lr: {current_lr:.6f}"
         )
 
+    log_file.close()
     print(f"학습 완료. best_mAP: {best_mAP:.4f}")
 
 
