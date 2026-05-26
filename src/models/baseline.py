@@ -40,4 +40,5 @@ def build_model(num_classes: int) -> torch.nn.Module:
     model = yolo.model
 
     _adapt_num_classes(model, num_classes)
+    model.model[-1].bias_init()
     return model
