@@ -83,8 +83,9 @@ def train_one_epoch(
         optimizer.zero_grad()
         output = model(images)
 
-        loss, _ = criterion(output, loss_batch)
-        loss = loss.sum()
+        loss_vec, _ = criterion(output, loss_batch)
+        print(f"  box={loss_vec[0]:.2f} cls={loss_vec[1]:.2f} dfl={loss_vec[2]:.2f}")
+        loss = loss_vec.sum()
         loss.backward()
         optimizer.step()
 
