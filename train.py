@@ -51,13 +51,13 @@ def _make_phase2_optimizer(model, phase2_lr):
     return torch.optim.AdamW(params, lr=phase2_lr)
 
 
-def _make_phase3_optimizer(model, lr, backbone_lr_ratio):
-    """Phase 3: backbone/neck lr*ratio, head lr 전체 fine-tune."""
+def _make_phase3_optimizer(model, head_lr, backbone_lr):
+    """Phase 3: backbone/neck, head 각각 별도 lr로 전체 fine-tune."""
     backbone_neck_params = [p for layer in list(model.model)[:-1] for p in layer.parameters()]
     head_params = list(model.model[-1].parameters())
     return torch.optim.AdamW([
-        {"params": backbone_neck_params, "lr": lr * backbone_lr_ratio},
-        {"params": head_params, "lr": lr},
+        {"params": backbone_neck_params, "lr": backbone_lr},
+        {"params": head_params, "lr": head_lr},
     ])
 
 
@@ -76,7 +76,7 @@ def main():
     phase2_lr = cfg["train"].get("phase2_lr", 0.001)
     phase2_lr_min = cfg["train"].get("phase2_lr_min", 0.00001)
     phase3_head_lr = cfg["train"].get("phase3_head_lr", 0.001)
-    phase3_backbone_lr_ratio = cfg["train"].get("phase3_backbone_lr_ratio", 0.1)
+    phase3_backbone_lr = cfg["train"].get("phase3_backbone_lr", 0.00001)
     phase3_lr_min = cfg["train"].get("phase3_lr_min", 0.00001)
     total_epochs = cfg["train"]["epochs"]
     freeze_epochs = max(1, int(total_epochs * cfg["train"].get("freeze_ratio", 0.2)))
@@ -165,10 +165,10 @@ def main():
         elif epoch == freeze_epochs + finetune_epochs + 1:
             # Phase 3: backbone/neck까지 전체 fine-tune
             unfreeze_all(model)
-            optimizer = _make_phase3_optimizer(model, phase3_head_lr, phase3_backbone_lr_ratio)
+            optimizer = _make_phase3_optimizer(model, phase3_head_lr, phase3_backbone_lr)
             remaining = total_epochs - freeze_epochs - finetune_epochs
             scheduler = CosineAnnealingLR(optimizer, T_max=max(remaining, 1), eta_min=phase3_lr_min)
-            print(f"[{epoch:03d}] Phase 3 시작: backbone/neck lr={phase3_head_lr * phase3_backbone_lr_ratio:.5f} fine-tune")
+            print(f"[{epoch:03d}] Phase 3 시작: backbone/neck lr={phase3_backbone_lr:.6f}, head lr={phase3_head_lr:.6f}")
 
         model.train()
         train_loss, box_loss, cls_loss, dfl_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
