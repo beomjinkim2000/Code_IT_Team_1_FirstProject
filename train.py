@@ -72,6 +72,11 @@ def main():
     _prepare_loss_args(model)
     criterion = v8DetectionLoss(model)
     postprocess_cfg = PostprocessConfig(**cfg["postprocess"])
+    eval_postprocess_cfg = PostprocessConfig(
+        conf_threshold=cfg["eval"]["conf_threshold"],
+        iou_threshold=cfg["postprocess"]["iou_threshold"],
+        max_detections=cfg["postprocess"]["max_detections"],
+    )
 
     best_mAP = -1.0
     for epoch in range(1, cfg["train"]["epochs"] + 1):
@@ -79,7 +84,7 @@ def main():
         train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
 
         model.eval()
-        predictions, targets = _collect_val_predictions(model, val_loader, device, postprocess_cfg)
+        predictions, targets = _collect_val_predictions(model, val_loader, device, eval_postprocess_cfg)
         val_mAP = evaluate(predictions, targets)["mAP"]
 
         is_best = val_mAP > best_mAP
