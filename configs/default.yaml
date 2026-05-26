@@ -17,10 +17,14 @@ data:
 train:
   epochs: 50
   batch_size: 16
-  lr: 0.001
+  lr: 0.001      # 시작 학습률
+  lr_min: 0.00001  # cosine 감소 후 최소 학습률
   img_size: 640
   seed: 42
-  val_ratio: 0.2   # train/val 분할 비율 (val 비율). 0.2 = 8:2
+  val_ratio: 0.2      # train/val 분할 비율 (val 비율). 0.2 = 8:2
+  freeze_ratio: 0.2    # Phase 1 비율: cv3 마지막만 학습 (예: 50에폭 → 10, 100에폭 → 20)
+  finetune_ratio: 0.4  # Phase 2 비율: unfreeze_mode에 따라 학습 범위 결정 (예: 50에폭 → 20, 100에폭 → 40)
+  unfreeze_mode: head  # Phase 2 언프리징 범위: "head"(Detect 전체) / "cv3_last"(cv3 마지막만 유지)
 
 paths:
   checkpoint: outputs/checkpoints/
