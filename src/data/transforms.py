@@ -45,14 +45,33 @@ class Transform:
         return Image.fromarray(transformed["image"]), transformed_target
 
 
-def train_transform(img_size: int) -> Transform:
-    """학습용 transform 파이프라인을 반환한다.
-
-    처음에는 val_transform과 동일하게 resize만 적용하고,
-    이후 train 전용 증강은 이 함수에 추가한다.
-    """
-    # v0.1에서는 검증과 동일하게 resize만 적용하고, 이후 train 전용 증강을 여기에 추가한다.
-    return Transform(_resize_pipeline(img_size))
+def train_transform(img_size: int, aug_cfg: dict | None = None) -> Transform:
+    """학습용 transform 파이프라인을 반환한다."""
+    c = aug_cfg or {}
+    tile = c["clahe_tile_grid_size"]
+    rotate_limit = c["safe_rotate_limit"]
+    pipeline = A.Compose(
+        [
+            A.Resize(height=img_size, width=img_size),
+            A.HorizontalFlip(p=c["horizontal_flip_p"]),
+            A.VerticalFlip(p=c["vertical_flip_p"]),
+            A.RandomRotate90(p=c["random_rotate90_p"]),
+            A.SafeRotate(limit=(-rotate_limit, rotate_limit), p=c["safe_rotate_p"]),
+            A.RandomBrightnessContrast(brightness_limit=c["brightness_limit"], contrast_limit=c["contrast_limit"], p=c["brightness_contrast_p"]),
+            A.HueSaturationValue(hue_shift_limit=c["hue_shift_limit"], sat_shift_limit=c["sat_shift_limit"], val_shift_limit=c["val_shift_limit"], p=c["hue_saturation_p"]),
+            A.CLAHE(clip_limit=c["clahe_clip_limit"], tile_grid_size=(tile, tile), p=c["clahe_p"]),
+            A.Sharpen(alpha=(c["sharpen_alpha_min"], c["sharpen_alpha_max"]), lightness=(c["sharpen_lightness_min"], c["sharpen_lightness_max"]), p=c["sharpen_p"]),
+            A.GaussNoise(var_limit=(c["gauss_noise_var_min"], c["gauss_noise_var_max"]), p=c["gauss_noise_p"]),
+            A.RandomScale(scale_limit=c["random_scale_limit"], p=c["random_scale_p"]),
+        ],
+        bbox_params=A.BboxParams(
+            format="pascal_voc",
+            label_fields=["labels"],
+            min_area=c["min_area"],
+            min_visibility=c["min_visibility"],
+        ),
+    )
+    return Transform(pipeline)
 
 
 def val_transform(img_size: int) -> Transform:
