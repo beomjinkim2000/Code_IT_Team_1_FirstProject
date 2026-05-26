@@ -27,6 +27,9 @@ paths:
   submission: outputs/submissions/
 
 postprocess:
-  conf_threshold: 0.5
+  conf_threshold: 0.25   # predict/submission 용
   iou_threshold: 0.7
   max_detections: 4
+
+eval:
+  conf_threshold: 0.001  # mAP 계산 전용 (PR curve 최대 recall 확보)
