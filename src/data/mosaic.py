@@ -14,10 +14,11 @@ class MosaicDataset(Dataset):
     클래스당 데이터가 적을 때 유효 학습 샘플을 4배로 늘리는 효과.
     """
 
-    def __init__(self, dataset: Dataset, img_size: int, p: float = 0.5) -> None:
+    def __init__(self, dataset: Dataset, img_size: int, p: float = 0.5, min_bbox_size: int = 2) -> None:
         self.dataset = dataset
         self.img_size = img_size
         self.p = p
+        self.min_bbox_size = min_bbox_size
 
     def __len__(self) -> int:
         return len(self.dataset)
@@ -68,7 +69,7 @@ class MosaicDataset(Dataset):
             # 리사이즈 후 너무 작아진 박스 제거
             w = combined_boxes[:, 2] - combined_boxes[:, 0]
             h = combined_boxes[:, 3] - combined_boxes[:, 1]
-            keep = (w >= 2) & (h >= 2)
+            keep = (w >= self.min_bbox_size) & (h >= self.min_bbox_size)
             combined_boxes = combined_boxes[keep]
             combined_labels = combined_labels[keep]
         else:
