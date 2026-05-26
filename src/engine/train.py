@@ -120,15 +120,18 @@ def train_one_epoch(
         optimizer.zero_grad()
         output = model(images)
 
-        loss, _ = criterion(output, loss_batch)
-        loss = loss.sum()
+        loss_vec, _ = criterion(output, loss_batch)
+        loss = loss_vec.sum()
         loss.backward()
         optimizer.step()
 
         loss_value = loss.item()
         total_loss += loss_value
         progress.set_postfix(
-            loss=f"{loss_value:.4f}"
+            loss=f"{loss_value:.4f}",
+            box=f"{loss_vec[0].item():.2f}",
+            cls=f"{loss_vec[1].item():.2f}",
+            dfl=f"{loss_vec[2].item():.2f}",
         )  # 진행 바 업데이트 시 loss 값을 표시
 
     return total_loss / num_samples
