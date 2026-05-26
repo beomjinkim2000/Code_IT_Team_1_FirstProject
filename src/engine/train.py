@@ -106,6 +106,7 @@ def train_one_epoch(
     device,
 ) -> float:
     total_loss = 0.0
+    num_samples = 0
 
     progress = tqdm(dataloader, desc="train", leave=False)  # tqdm으로 진행상황 시각화
     for images, targets in progress:  # 이미지, 타겟을 가져옴
@@ -133,4 +134,4 @@ def train_one_epoch(
             dfl=f"{loss_vec[2].item():.2f}",
         )  # 진행 바 업데이트 시 loss 값을 표시
 
-    return total_loss / len(dataloader)
+    return total_loss / num_samples
