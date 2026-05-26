@@ -25,7 +25,9 @@ def _collect_val_predictions(model, val_loader, device, postprocess_cfg):
         batch = torch.stack(images).to(device)
         raw = predict_batch(model, batch, device)
         image_ids = [t["image_id"] for t in targets]
-        preds = postprocess_raw_outputs(raw, image_ids=image_ids, config=postprocess_cfg)
+        preds = postprocess_raw_outputs(
+            raw, image_ids=image_ids, config=postprocess_cfg
+        )
         all_predictions.extend(preds)
         all_targets.extend(
             {"boxes": t["boxes"], "labels": t["labels"]} for t in targets
@@ -35,7 +37,9 @@ def _collect_val_predictions(model, val_loader, device, postprocess_cfg):
 
 def main():
     parser = argparse.ArgumentParser(description="경구약제 객체 탐지 학습")
-    parser.add_argument("--config", default="configs/default.yaml", help="config 파일 경로")
+    parser.add_argument(
+        "--config", default="configs/default.yaml", help="config 파일 경로"
+    )
     args = parser.parse_args()
 
     cfg = load_config(args.config)
@@ -51,8 +55,18 @@ def main():
     annotations = PillDataset.load_annotations()
     category_to_label = cfg["data"]["category_to_label"]
 
-    train_ds = PillDataset(split="train", annotations=annotations, category_to_label=category_to_label, transforms=train_transform(img_size))
-    val_ds   = PillDataset(split="val",   annotations=annotations, category_to_label=category_to_label, transforms=val_transform(img_size))
+    train_ds = PillDataset(
+        split="train",
+        annotations=annotations,
+        category_to_label=category_to_label,
+        transforms=train_transform(img_size),
+    )
+    val_ds = PillDataset(
+        split="val",
+        annotations=annotations,
+        category_to_label=category_to_label,
+        transforms=val_transform(img_size),
+    )
 
     train_loader = DataLoader(
         train_ds,
@@ -81,10 +95,12 @@ def main():
     best_mAP = -1.0
     for epoch in range(1, cfg["train"]["epochs"] + 1):
         model.train()
-        train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
+        train_loss, box_loss, cls_loss, dfl_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
 
         model.eval()
-        predictions, targets = _collect_val_predictions(model, val_loader, device, eval_postprocess_cfg)
+        predictions, targets = _collect_val_predictions(
+            model, val_loader, device, eval_postprocess_cfg
+        )
         val_mAP = evaluate(predictions, targets)["mAP"]
 
         is_best = val_mAP > best_mAP
@@ -92,12 +108,17 @@ def main():
             best_mAP = val_mAP
 
         save_checkpoint(
-            model, optimizer, epoch, val_mAP,
+            model,
+            optimizer,
+            epoch,
+            val_mAP,
             checkpoint_dir=cfg["paths"]["checkpoint"],
             is_best=is_best,
         )
 
-        print(f"[{epoch:03d}/{cfg['train']['epochs']:03d}] loss: {train_loss:.4f}  val_mAP: {val_mAP:.4f}")
+        print(
+            f"[{epoch:03d}/{cfg['train']['epochs']:03d}] loss: {train_loss:.4f}  box: {box_loss:.4f}  cls: {cls_loss:.4f}  dfl: {dfl_loss:.4f}  val_mAP: {val_mAP:.4f}"
+        )
 
     print(f"학습 완료. best_mAP: {best_mAP:.4f}")
 
