@@ -2,7 +2,7 @@ name: Discord PR Notification
 
 on:
   pull_request:
-    types: [opened, reopened, closed]
+    types: [opened, reopened, closed, synchronize]
   pull_request_review:
     types: [submitted]
   pull_request_review_comment:
@@ -80,6 +80,14 @@ jobs:
             EXTRA_NAME="리뷰어"
             EXTRA_VALUE="${COMMENT_USER}"
             RAW_BODY="$COMMENT_BODY"
+
+          elif [ "$EVENT" = "pull_request" ] && [ "$ACTION" = "synchronize" ]; then
+            TITLE="📌 PR에 새 커밋이 푸시됐습니다"
+            COLOR=10181046
+            DESC="[${PR_TITLE}](${PR_URL})"
+            EXTRA_NAME=""
+            EXTRA_VALUE=""
+            RAW_BODY="$PR_BODY"
 
           else
             TITLE="🔔 새 PR이 열렸습니다!"
