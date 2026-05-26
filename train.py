@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 from ultralytics.utils.loss import v8DetectionLoss
 
-from src.data.dataset import PillDataset
+from src.data.dataset import PillDataset, RAW_DATA_ROOT
 from src.data.split import train_val_split
 from src.data.transforms import train_transform, val_transform
 from src.engine.checkpoint import save_checkpoint
@@ -56,7 +56,7 @@ def main():
     annotations = PillDataset.load_annotations()
     category_to_label = cfg["data"]["category_to_label"]
 
-    all_image_files = sorted((PillDataset.RAW_DATA_ROOT / "train_images").glob("*.png"))
+    all_image_files = sorted((RAW_DATA_ROOT / "train_images").glob("*.png"))
     train_files, val_files = train_val_split(
         all_image_files,
         val_ratio=cfg["train"]["val_ratio"],

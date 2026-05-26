@@ -63,6 +63,7 @@ def train_transform(img_size: int, aug_cfg: dict | None = None) -> Transform:
             A.Sharpen(alpha=(c["sharpen_alpha_min"], c["sharpen_alpha_max"]), lightness=(c["sharpen_lightness_min"], c["sharpen_lightness_max"]), p=c["sharpen_p"]),
             A.GaussNoise(var_limit=(c["gauss_noise_var_min"], c["gauss_noise_var_max"]), p=c["gauss_noise_p"]),
             A.RandomScale(scale_limit=c["random_scale_limit"], p=c["random_scale_p"]),
+            A.Resize(height=img_size, width=img_size),
         ],
         bbox_params=A.BboxParams(
             format="pascal_voc",
