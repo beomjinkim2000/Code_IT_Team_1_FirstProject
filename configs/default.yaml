@@ -55,7 +55,7 @@ eval:
 
 augmentation:
   # --- Mosaic ---
-  mosaic_p: 0.5                # 이미지 4장을 합치는 Mosaic 증강 적용 확률 (0=끄기, 1=항상)
+  mosaic_p: 0.0                # 이미지 4장을 합치는 Mosaic 증강 적용 확률 (0=끄기, 1=항상)
   mosaic_min_bbox_size: 2      # Mosaic 리사이즈 후 이 픽셀 이하 박스는 제거
 
   # --- 기하 변환 (HorizontalFlip / VerticalFlip / RandomRotate90 / SafeRotate) ---
