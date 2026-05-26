@@ -31,6 +31,10 @@ class PostprocessConfig:
   conf_threshold: float = 0.5
   iou_threshold: float = 0.7
   max_detections: int = 4
+  class_agnostic_nms: bool = False
+  clamp_boxes: bool = False
+  max_box_area_ratio: float | None = None
+  min_box_area_ratio: float | None = None
 
 def make_empty_prediction(
     image_id: int,
@@ -162,10 +166,12 @@ def _postprocess_single_raw_output(
   if scores.numel() == 0:
     return make_empty_prediction(image_id=image_id, device=raw_output.device)
 
+  nms_groups = torch.zeros_like(labels) if config.class_agnostic_nms else labels
+
   keep_indices = batched_nms(
     boxes=boxes,
     scores=scores,
-    idxs=labels,
+    idxs=nms_groups,
     iou_threshold=config.iou_threshold,
   )
   keep_indices = keep_indices[: config.max_detections]

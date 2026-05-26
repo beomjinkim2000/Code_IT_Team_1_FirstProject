@@ -10,6 +10,7 @@ from src.data.dataset import PillDataset
 from src.data.transforms import val_transform
 from src.engine.postprocess import PostprocessConfig, postprocess_raw_outputs
 from src.engine.predict import predict_batch
+from src.models.baseline import build_model
 from src.submission.make_submission import make_submission
 from src.utils.collate import collate_fn
 from src.utils.config import load_config
@@ -18,7 +19,11 @@ from src.utils.config import load_config
 def main():
     parser = argparse.ArgumentParser(description="경구약제 객체 탐지 예측 및 제출 파일 생성")
     parser.add_argument("--config", default="configs/default.yaml", help="config 파일 경로")
-    parser.add_argument("--checkpoint", default=None, help="체크포인트 경로 (미지정 시 best_model.pt)")
+    parser.add_argument(
+        "--checkpoint",
+        default=None,
+        help="체크포인트 경로 (미지정 시 best_model.pt, none 입력 시 checkpoint 없이 실행)",
+    )
     args = parser.parse_args()
 
     cfg = load_config(args.config)
@@ -26,18 +31,25 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"device: {device}")
 
-    checkpoint_dir = Path(cfg["paths"]["checkpoint"])
-    ckpt_path = args.checkpoint or checkpoint_dir / "best_model.pt"
-    print(f"체크포인트 로드: {ckpt_path}")
-    checkpoint = torch.load(ckpt_path, map_location=device, weights_only=True)
-    model = checkpoint["model_state"]
-
-    # weights_only=True로 로드 시 model_state는 state_dict이므로 모델 구조 먼저 빌드 후 로드
-    from src.models.baseline import build_model
     model = build_model(cfg["data"]["nc"])
-    model.load_state_dict(
-        torch.load(ckpt_path, map_location=device, weights_only=True)["model_state"]
-    )
+
+    checkpoint_dir = Path(cfg["paths"]["checkpoint"])
+    if args.checkpoint is None:
+        ckpt_path = checkpoint_dir / "best_model.pt"
+    elif str(args.checkpoint).lower() in {"none", "no", "skip"}:
+        ckpt_path = None
+    else:
+        ckpt_path = Path(args.checkpoint)
+
+    if ckpt_path is None:
+        # checkpoint 없이 실행하는 모드는 성능 평가용이 아니라
+        # test 이미지 로드부터 submission 생성까지 파이프라인 확인용이다.
+        print("checkpoint 없이 기본 모델로 예측을 실행합니다.")
+    else:
+        print(f"체크포인트 로드: {ckpt_path}")
+        checkpoint = torch.load(ckpt_path, map_location=device, weights_only=True)
+        model.load_state_dict(checkpoint["model_state"])
+
     model.to(device)
     model.eval()
 
@@ -66,6 +78,26 @@ def main():
             if len(pred["boxes"]) > 0:
                 pred["boxes"][:, [0, 2]] *= scale_x
                 pred["boxes"][:, [1, 3]] *= scale_y
+
+                if postprocess_cfg.clamp_boxes:
+                    pred["boxes"][:, [0, 2]].clamp_(0, orig_w)
+                    pred["boxes"][:, [1, 3]].clamp_(0, orig_h)
+
+                box_w = pred["boxes"][:, 2] - pred["boxes"][:, 0]
+                box_h = pred["boxes"][:, 3] - pred["boxes"][:, 1]
+                area_ratio = (box_w * box_h) / (orig_w * orig_h)
+
+                keep = (box_w > 0) & (box_h > 0)
+
+                if postprocess_cfg.max_box_area_ratio is not None:
+                    keep = keep & (area_ratio <= postprocess_cfg.max_box_area_ratio)
+
+                if postprocess_cfg.min_box_area_ratio is not None:
+                    keep = keep & (area_ratio >= postprocess_cfg.min_box_area_ratio)
+
+                pred["boxes"] = pred["boxes"][keep]
+                pred["labels"] = pred["labels"][keep]
+                pred["scores"] = pred["scores"][keep]
 
         all_predictions.extend(preds)
 
