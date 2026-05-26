@@ -92,4 +92,4 @@ def train_one_epoch(
         total_loss += loss_value
         progress.set_postfix(loss=f"{loss_value:.4f}")      #진행 바 업데이트 시 loss 값을 표시
 
-    return total_loss / len(dataloader)
+    return total_loss / len(dataloader) / dataloader.batch_size
