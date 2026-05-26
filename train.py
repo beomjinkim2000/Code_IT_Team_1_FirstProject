@@ -6,6 +6,7 @@ from tqdm import tqdm
 from ultralytics.utils.loss import v8DetectionLoss
 
 from src.data.dataset import PillDataset
+from src.data.split import train_val_split
 from src.data.transforms import train_transform, val_transform
 from src.engine.checkpoint import save_checkpoint
 from src.engine.evaluate import evaluate
@@ -55,17 +56,27 @@ def main():
     annotations = PillDataset.load_annotations()
     category_to_label = cfg["data"]["category_to_label"]
 
+    all_image_files = sorted((PillDataset.RAW_DATA_ROOT / "train_images").glob("*.png"))
+    train_files, val_files = train_val_split(
+        all_image_files,
+        val_ratio=cfg["train"]["val_ratio"],
+        seed=cfg["train"]["seed"],
+    )
+    print(f"train: {len(train_files)}장 / val: {len(val_files)}장")
+
     train_ds = PillDataset(
         split="train",
         annotations=annotations,
         category_to_label=category_to_label,
-        transforms=train_transform(img_size),
+        transforms=train_transform(img_size, cfg.get("augmentation")),
+        image_files=train_files,
     )
     val_ds = PillDataset(
         split="val",
         annotations=annotations,
         category_to_label=category_to_label,
         transforms=val_transform(img_size),
+        image_files=val_files,
     )
 
     train_loader = DataLoader(
