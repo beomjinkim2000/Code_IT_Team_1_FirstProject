@@ -124,3 +124,31 @@ def test_make_submission_allows_empty_predictions(tmp_path: Path) -> None:
 
     assert list(df.columns) == SUBMISSION_COLUMNS
     assert len(df) == 0
+
+def test_predictions_to_rows_uses_kaggle_category_id_mapping() -> None:
+    """class_id를 Kaggle category_id로 변환해서 제출 row를 만드는지 확인한다."""
+
+    predictions = [
+        {
+            "image_id": 123,
+            "boxes": torch.tensor(
+                [[10.0, 20.0, 50.0, 80.0]],
+                dtype=torch.float32,
+            ),
+            "labels": torch.tensor([0], dtype=torch.int64),
+            "scores": torch.tensor([0.9], dtype=torch.float32),
+        }
+    ]
+
+    label_to_category = {0: 1900}
+
+    rows = predictions_to_rows(predictions, label_to_category)
+
+    assert len(rows) == 1
+    assert rows[0]["image_id"] == 123
+    assert rows[0]["category_id"] == 1900
+    assert rows[0]["bbox_x"] == pytest.approx(10.0)
+    assert rows[0]["bbox_y"] == pytest.approx(20.0)
+    assert rows[0]["bbox_w"] == pytest.approx(40.0)
+    assert rows[0]["bbox_h"] == pytest.approx(60.0)
+    assert rows[0]["score"] == pytest.approx(0.9)

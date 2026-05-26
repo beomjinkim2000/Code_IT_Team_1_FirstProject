@@ -20,7 +20,8 @@ class Prediction(TypedDict):
   boxes: torch.Tensor
   scores: torch.Tensor
   labels: torch.Tensor
-  RawOutputs = torch.Tensor | tuple[torch.Tensor, ...] | list[torch.Tensor]
+  
+RawOutputs = torch.Tensor | tuple[torch.Tensor, ...] | list[torch.Tensor]
 
 @dataclass
 class PostprocessConfig:
@@ -209,3 +210,4 @@ def postprocess_raw_outputs(
     )
     for batch_idx in range(batch_size)
   ]
+
