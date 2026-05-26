@@ -195,7 +195,7 @@ def main():
             is_best=is_best,
         )
 
-        current_lr = scheduler.get_last_lr()[0]
+        current_lr = scheduler.get_last_lr()[-1]
         log_writer.writerow({
             "epoch": epoch, "train_loss": round(train_loss, 6),
             "box_loss": round(box_loss, 6), "cls_loss": round(cls_loss, 6), "dfl_loss": round(dfl_loss, 6),
