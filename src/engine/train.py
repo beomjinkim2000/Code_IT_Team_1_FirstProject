@@ -104,8 +104,12 @@ def train_one_epoch(
     optimizer: Optimizer,
     criterion: v8DetectionLoss,
     device,
-) -> float:
+) -> tuple[float, float, float, float]:
     total_loss = 0.0
+    total_box = 0.0
+    total_cls = 0.0
+    total_dfl = 0.0
+
     num_samples = 0
 
     progress = tqdm(dataloader, desc="train", leave=False)  # tqdm으로 진행상황 시각화
@@ -128,6 +132,10 @@ def train_one_epoch(
 
         loss_value = loss.item()
         total_loss += loss_value
+        total_box += loss_vec[0].item()
+        total_cls += loss_vec[1].item()
+        total_dfl += loss_vec[2].item()
+
         progress.set_postfix(
             loss=f"{loss_value:.4f}",
             box=f"{loss_vec[0].item():.2f}",
@@ -135,4 +143,9 @@ def train_one_epoch(
             dfl=f"{loss_vec[2].item():.2f}",
         )  # 진행 바 업데이트 시 loss 값을 표시
 
-    return total_loss / num_samples
+    return (
+        total_loss / num_samples,
+        total_box / num_samples,
+        total_cls / num_samples,
+        total_dfl / num_samples,
+    )
