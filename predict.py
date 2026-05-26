@@ -19,11 +19,7 @@ from src.utils.config import load_config
 def main():
     parser = argparse.ArgumentParser(description="경구약제 객체 탐지 예측 및 제출 파일 생성")
     parser.add_argument("--config", default="configs/default.yaml", help="config 파일 경로")
-    parser.add_argument(
-        "--checkpoint",
-        default=None,
-        help="체크포인트 경로 (미지정 시 best_model.pt, none 입력 시 checkpoint 없이 실행)",
-    )
+    parser.add_argument("--checkpoint", default=None, help="체크포인트 경로 (미지정 시 best_model.pt)")
     args = parser.parse_args()
 
     cfg = load_config(args.config)
@@ -34,21 +30,10 @@ def main():
     model = build_model(cfg["data"]["nc"])
 
     checkpoint_dir = Path(cfg["paths"]["checkpoint"])
-    if args.checkpoint is None:
-        ckpt_path = checkpoint_dir / "best_model.pt"
-    elif str(args.checkpoint).lower() in {"none", "no", "skip"}:
-        ckpt_path = None
-    else:
-        ckpt_path = Path(args.checkpoint)
-
-    if ckpt_path is None:
-        # checkpoint 없이 실행하는 모드는 성능 평가용이 아니라
-        # test 이미지 로드부터 submission 생성까지 파이프라인 확인용이다.
-        print("checkpoint 없이 기본 모델로 예측을 실행합니다.")
-    else:
-        print(f"체크포인트 로드: {ckpt_path}")
-        checkpoint = torch.load(ckpt_path, map_location=device, weights_only=True)
-        model.load_state_dict(checkpoint["model_state"])
+    ckpt_path = Path(args.checkpoint) if args.checkpoint is not None else checkpoint_dir / "best_model.pt"
+    print(f"체크포인트 로드: {ckpt_path}")
+    checkpoint = torch.load(ckpt_path, map_location=device, weights_only=True)
+    model.load_state_dict(checkpoint["model_state"])
 
     model.to(device)
     model.eval()
