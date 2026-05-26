@@ -1,4 +1,6 @@
 import argparse
+import csv
+from pathlib import Path
 
 import torch
 from torch.optim.lr_scheduler import CosineAnnealingLR
@@ -140,6 +142,13 @@ def main():
         max_detections=cfg["postprocess"]["max_detections"],
     )
 
+    log_dir = Path("outputs/logs")
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_path = log_dir / "metrics.csv"
+    log_file = log_path.open("w", newline="")
+    log_writer = csv.DictWriter(log_file, fieldnames=["epoch", "train_loss", "box_loss", "cls_loss", "dfl_loss", "val_mAP", "val_mAP_50", "lr"])
+    log_writer.writeheader()
+
     best_mAP = -1.0
     for epoch in range(1, total_epochs + 1):
 
@@ -169,7 +178,9 @@ def main():
         predictions, targets = _collect_val_predictions(
             model, val_loader, device, eval_postprocess_cfg
         )
-        val_mAP = evaluate(predictions, targets)["mAP"]
+        eval_result = evaluate(predictions, targets)
+        val_mAP = eval_result["mAP"]
+        val_mAP_50 = eval_result["mAP_50"]
 
         is_best = val_mAP > best_mAP
         if is_best:
@@ -185,10 +196,18 @@ def main():
         )
 
         current_lr = scheduler.get_last_lr()[0]
+        log_writer.writerow({
+            "epoch": epoch, "train_loss": round(train_loss, 6),
+            "box_loss": round(box_loss, 6), "cls_loss": round(cls_loss, 6), "dfl_loss": round(dfl_loss, 6),
+            "val_mAP": round(val_mAP, 6), "val_mAP_50": round(val_mAP_50, 6), "lr": round(current_lr, 8),
+        })
+        log_file.flush()
         print(
-            f"[{epoch:03d}/{total_epochs:03d}] loss: {train_loss:.4f}  box: {box_loss:.4f}  cls: {cls_loss:.4f}  dfl: {dfl_loss:.4f}  val_mAP: {val_mAP:.4f}  lr: {current_lr:.6f}"
+            f"[{epoch:03d}/{total_epochs:03d}] loss: {train_loss:.4f}  box: {box_loss:.4f}  cls: {cls_loss:.4f}  dfl: {dfl_loss:.4f}"
+            f"  mAP: {val_mAP:.4f}  mAP@50: {val_mAP_50:.4f}  lr: {current_lr:.6f}"
         )
 
+    log_file.close()
     print(f"학습 완료. best_mAP: {best_mAP:.4f}")
 
 
