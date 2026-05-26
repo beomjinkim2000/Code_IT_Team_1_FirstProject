@@ -9,6 +9,7 @@ from tqdm import tqdm
 from ultralytics.utils.loss import v8DetectionLoss
 
 from src.data.dataset import PillDataset, RAW_DATA_ROOT
+from src.data.mosaic import MosaicDataset
 from src.data.split import train_val_split
 from src.data.transforms import train_transform, val_transform
 from src.engine.checkpoint import save_checkpoint
@@ -108,6 +109,14 @@ def main():
         transforms=train_transform(img_size, cfg.get("augmentation")),
         image_files=train_files,
     )
+    aug_cfg = cfg.get("augmentation") or {}
+    train_ds = MosaicDataset(
+        train_ds,
+        img_size=img_size,
+        p=aug_cfg.get("mosaic_p", 0.5),
+        min_bbox_size=aug_cfg.get("mosaic_min_bbox_size", 2),
+    )
+
     val_ds = PillDataset(
         split="val",
         annotations=annotations,
