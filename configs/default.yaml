@@ -17,10 +17,28 @@ data:
 train:
   epochs: 50
   batch_size: 16
-  lr: 0.001
   img_size: 640
   seed: 42
-  val_ratio: 0.2   # train/val 분할 비율 (val 비율). 0.2 = 8:2
+  val_ratio: 0.2        # train/val 분할 비율. 0.2 = 8:2
+
+  # --- Phase 비율 ---
+  freeze_ratio: 0.2     # Phase 1 에폭 비율 (예: 50 × 0.2 = 10 에폭)
+  finetune_ratio: 0.4   # Phase 2 에폭 비율 (예: 50 × 0.4 = 20 에폭)
+                        # Phase 3 = 나머지 (1 - 0.2 - 0.4 = 0.4 → 20 에폭)
+  unfreeze_mode: cv3_last   # Phase 2 학습 범위: "head"(Detect 전체) / "cv3_last"(cv3 마지막만 유지)
+
+  # --- Phase 1: cv3 마지막 Conv2d만 학습 ---
+  phase1_lr: 0.001
+  phase1_lr_min: 0.00001
+
+  # --- Phase 2: head 전체 또는 cv3_last 유지 ---
+  phase2_lr: 0.001
+  phase2_lr_min: 0.00001
+
+  # --- Phase 3: backbone/neck + head 전체 fine-tune ---
+  phase3_head_lr: 0.001
+  phase3_backbone_lr_ratio: 0.1   # backbone/neck lr = phase3_head_lr × ratio
+  phase3_lr_min: 0.00001
 
 paths:
   checkpoint: outputs/checkpoints/
