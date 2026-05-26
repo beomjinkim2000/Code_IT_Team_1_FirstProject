@@ -120,6 +120,7 @@ def train_one_epoch(
         optimizer.zero_grad()
         output = model(images)
 
+        num_samples += len(images)
         loss_vec, _ = criterion(output, loss_batch)
         loss = loss_vec.sum()
         loss.backward()
