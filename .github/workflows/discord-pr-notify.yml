@@ -82,7 +82,7 @@ jobs:
             RAW_BODY="$COMMENT_BODY"
 
           elif [ "$EVENT" = "pull_request" ] && [ "$ACTION" = "synchronize" ]; then
-            TITLE="📌 PR에 새 커밋이 푸시됐습니다"
+            TITLE="📌 PR에 새 커밋이 푸쉬됐습니다"
             COLOR=10181046
             DESC="[${PR_TITLE}](${PR_URL})"
             EXTRA_NAME=""
