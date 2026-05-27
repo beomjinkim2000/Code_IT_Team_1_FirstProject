@@ -15,15 +15,15 @@ data:
   names: []              # class_mapping에서 자동 설정
 
 train:
-  epochs: 50
+  epochs: 200
   batch_size: 16
   img_size: 640
   seed: 42
 
   # --- Phase 비율 ---
-  freeze_ratio: 0.2     # Phase 1 에폭 비율 (예: 50 × 0.2 = 10 에폭)
-  finetune_ratio: 0.4   # Phase 2 에폭 비율 (예: 50 × 0.4 = 20 에폭)
-                        # Phase 3 = 나머지 (1 - 0.2 - 0.4 = 0.4 → 20 에폭)
+  freeze_ratio: 0.2     # Phase 1 에폭 비율 (예: 200 × 0.2 = 40 에폭)
+  finetune_ratio: 0.4   # Phase 2 에폭 비율 (예: 200 × 0.4 = 80 에폭)
+                        # Phase 3 = 나머지 (1 - 0.2 - 0.4 = 0.4 → 80 에폭)
   unfreeze_mode: head   # Phase 2 학습 범위: "head"(Detect 전체) / "cv3_last"(cv3 마지막만 유지)
 
   # --- Phase 1: cv3 마지막 Conv2d만 학습 ---
