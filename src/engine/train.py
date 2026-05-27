@@ -8,6 +8,7 @@ from tqdm import tqdm
 from ultralytics.utils.loss import v8DetectionLoss
 
 
+
 def _prepare_loss_args(
     model: nn.Module,
 ) -> None:  # YOLO 모델의 손실 계산에 필요한 인자들을 모델에 설정하는 함수

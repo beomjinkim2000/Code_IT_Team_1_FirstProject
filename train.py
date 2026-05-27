@@ -4,7 +4,7 @@ from pathlib import Path
 
 import torch
 from torch.optim.lr_scheduler import CosineAnnealingLR
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, WeightedRandomSampler
 from tqdm import tqdm
 from ultralytics.utils.loss import v8DetectionLoss
 
@@ -17,6 +17,7 @@ from src.engine.evaluate import evaluate
 from src.engine.postprocess import PostprocessConfig, postprocess_raw_outputs
 from src.engine.predict import predict_batch
 from src.engine.train import _prepare_loss_args, train_one_epoch
+from src.utils.class_weights import compute_sample_weights
 from src.models.baseline import build_model, freeze_except_cv3_last, unfreeze_head, unfreeze_all
 from src.utils.collate import collate_fn
 from src.utils.config import load_config
@@ -125,12 +126,23 @@ def main():
         image_files=val_files,
     )
 
-    train_loader = DataLoader(
-        train_ds,
-        batch_size=cfg["train"]["batch_size"],
-        shuffle=True,
-        collate_fn=collate_fn,
-    )
+    cw_cfg = cfg.get("class_weights") or {}
+    cw_method = cw_cfg.get("method")
+    if cw_method:
+        sample_weights = compute_sample_weights(
+            image_paths=train_ds.dataset.image_paths,
+            annotations=annotations,
+            category_to_label=category_to_label,
+            num_classes=cfg["data"]["nc"],
+            method=cw_method,
+            manual=cw_cfg.get("manual"),
+        )
+        sampler = WeightedRandomSampler(sample_weights, num_samples=len(sample_weights), replacement=True)
+        train_loader = DataLoader(train_ds, batch_size=cfg["train"]["batch_size"], sampler=sampler, collate_fn=collate_fn)
+        print(f"class_weights: method={cw_method}, sample_weights min={min(sample_weights):.3f} max={max(sample_weights):.3f}")
+    else:
+        train_loader = DataLoader(train_ds, batch_size=cfg["train"]["batch_size"], shuffle=True, collate_fn=collate_fn)
+
     val_loader = DataLoader(
         val_ds,
         batch_size=cfg["train"]["batch_size"],
