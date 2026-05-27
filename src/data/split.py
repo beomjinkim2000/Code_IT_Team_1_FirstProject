@@ -330,14 +330,7 @@ def _distribution_rows(
     num_classes: int,
 ) -> list[dict[str, int | str]]:
     # 주어진 파일 목록에 대해 class_id별 등장 이미지 수를 센다.
-    counts = [0 for _ in range(num_classes)]
-    for file_name in files:
-        image_id = image_id_by_file.get(file_name)
-        if image_id is None:
-            continue
-        for class_id in labels_by_id.get(image_id, set()):
-            if 0 <= class_id < num_classes:
-                counts[class_id] += 1
+    counts = _count_classes(files, labels_by_id, image_id_by_file, num_classes)
 
     # CSV로 저장하기 쉬운 row dict 목록으로 변환한다.
     return [

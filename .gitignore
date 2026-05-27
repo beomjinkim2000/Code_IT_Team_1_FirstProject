@@ -2,6 +2,7 @@
 data/raw/*
 !data/raw/.gitkeep
 data/augmented/
+data/splits/
 
 # 모델 가중치
 outputs/
