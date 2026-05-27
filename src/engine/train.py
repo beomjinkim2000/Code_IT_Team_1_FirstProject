@@ -1,4 +1,4 @@
-from types import SimpleNamespace
+﻿from types import SimpleNamespace
 
 import torch
 from torch import nn
@@ -105,6 +105,7 @@ def train_one_epoch(
     optimizer: Optimizer,
     criterion: v8DetectionLoss,
     device,
+    ema,
 ) -> tuple[float, float, float, float]:
     total_loss = 0.0
     total_box = 0.0
@@ -130,6 +131,8 @@ def train_one_epoch(
         loss = loss_vec.sum()
         loss.backward()
         optimizer.step()
+        if ema is not None:     #ema가 켜져 있으면
+            ema.update(model)       #업데이트
 
         loss_value = loss.item()
         total_loss += loss_value
@@ -150,3 +153,4 @@ def train_one_epoch(
         total_cls / num_samples,
         total_dfl / num_samples,
     )
+

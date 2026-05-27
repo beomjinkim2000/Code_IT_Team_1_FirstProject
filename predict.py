@@ -1,4 +1,4 @@
-import argparse
+﻿import argparse
 import json
 from pathlib import Path
 
@@ -10,6 +10,7 @@ from src.data.dataset import PillDataset
 from src.data.transforms import val_transform
 from src.engine.postprocess import PostprocessConfig, postprocess_raw_outputs
 from src.engine.predict import predict_batch
+from src.models.baseline import build_model
 from src.submission.make_submission import make_submission
 from src.utils.collate import collate_fn
 from src.utils.config import load_config
@@ -30,14 +31,11 @@ def main():
     ckpt_path = args.checkpoint or checkpoint_dir / "best_model.pt"
     print(f"체크포인트 로드: {ckpt_path}")
     checkpoint = torch.load(ckpt_path, map_location=device, weights_only=True)
-    model = checkpoint["model_state"]
+    state_key = "ema_state" if cfg["ema"]["enabled"] else "model_state"     #ema가 켜져 있으면 ema 모델의 가중치를 로드, 아니면 현재 모델의 가중치를 로드
+    print(f"사용 가중치: {state_key}")      #사용중인 가중치가 ema인지, 일반 모델인지 출력
 
-    # weights_only=True로 로드 시 model_state는 state_dict이므로 모델 구조 먼저 빌드 후 로드
-    from src.models.baseline import build_model
     model = build_model(cfg["data"]["nc"])
-    model.load_state_dict(
-        torch.load(ckpt_path, map_location=device, weights_only=True)["model_state"]
-    )
+    model.load_state_dict(checkpoint[state_key])
     model.to(device)
     model.eval()
 

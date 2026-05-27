@@ -1,4 +1,4 @@
-# null 체크 대상 필드 목록 — 여기에 등록된 필드만 validate_config()가 검사
+﻿# null 체크 대상 필드 목록 — 여기에 등록된 필드만 validate_config()가 검사
 _required:
   - model.num_classes
   - data.nc
@@ -15,7 +15,7 @@ data:
   names: []              # class_mapping에서 자동 설정
 
 train:
-  epochs: 50
+  epochs: 1
   batch_size: 16
   img_size: 640
   seed: 42
@@ -40,6 +40,10 @@ train:
   phase3_backbone_lr: 0.00001     # backbone/neck lr (1e-5, head의 1/10 — pretrained 특징 보존)
   phase3_lr_min: 0.000001         # cosine 최솟값 (1e-6, 모든 param group 공통)
 
+ema:
+  enabled: true          # EMA 모델 사용 여부
+  decay: 0.999           # EMA decay. 데이터/step이 적으면 0.995도 실험 가능
+  
 split:
   method: iterative        # random / iterative
   output_dir: data/splits
