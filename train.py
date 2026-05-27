@@ -1,4 +1,4 @@
-import argparse
+﻿import argparse
 import csv
 from pathlib import Path
 
@@ -13,6 +13,7 @@ from src.data.mosaic import MosaicDataset
 from src.data.split import train_val_split
 from src.data.transforms import train_transform, val_transform
 from src.engine.checkpoint import save_checkpoint
+from src.engine.ema import ModelEMA
 from src.engine.evaluate import evaluate
 from src.engine.postprocess import PostprocessConfig, postprocess_raw_outputs
 from src.engine.predict import predict_batch
@@ -90,6 +91,7 @@ def main():
     model = build_model(cfg["data"]["nc"])
     freeze_except_cv3_last(model)
     model.to(device)
+    ema = ModelEMA(model).to(device) if cfg["ema"]["enabled"] else None
 
     annotations = PillDataset.load_annotations()
     category_to_label = cfg["data"]["category_to_label"]
@@ -180,12 +182,13 @@ def main():
             print(f"[{epoch:03d}] Phase 3 시작: backbone/neck lr={phase3_backbone_lr:.6f}, head lr={phase3_head_lr:.6f}")
 
         model.train()
-        train_loss, box_loss, cls_loss, dfl_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
+        train_loss, box_loss, cls_loss, dfl_loss = train_one_epoch(model, train_loader, optimizer, criterion, device, ema=ema)
         scheduler.step()
 
-        model.eval()
+        eval_model = ema.model if ema is not None else model        #ema가 켜져있으면 ema 모델로 평가, 아니면 현재 모델로 평가
+        eval_model.eval()
         predictions, targets = _collect_val_predictions(
-            model, val_loader, device, eval_postprocess_cfg
+            eval_model, val_loader, device, eval_postprocess_cfg
         )
         eval_result = evaluate(predictions, targets)
         val_mAP = eval_result["mAP"]
@@ -202,6 +205,7 @@ def main():
             val_mAP,
             checkpoint_dir=cfg["paths"]["checkpoint"],
             is_best=is_best,
+            ema=ema,
         )
 
         current_lr = scheduler.get_last_lr()[-1]
@@ -222,3 +226,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+
