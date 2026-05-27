@@ -3,7 +3,7 @@ import csv
 from pathlib import Path
 
 import torch
-from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch.optim.lr_scheduler import CosineAnnealingLR, LinearLR, SequentialLR
 from torch.utils.data import DataLoader, WeightedRandomSampler
 from tqdm import tqdm
 from ultralytics.utils.loss import v8DetectionLoss
@@ -42,26 +42,48 @@ def _collect_val_predictions(model, val_loader, device, postprocess_cfg):
     return all_predictions, all_targets
 
 
-def _make_phase1_optimizer(model, phase1_lr):
+def _make_optimizer(opt_cfg, param_groups):
+    """opt_cfg['type'] 에 따라 AdamW 또는 SGD를 생성한다."""
+    opt_type = opt_cfg.get("type", "adamw").lower()
+    if opt_type == "sgd":
+        return torch.optim.SGD(
+            param_groups,
+            momentum=opt_cfg.get("momentum", 0.937),
+            weight_decay=opt_cfg.get("weight_decay", 0.0005),
+            nesterov=opt_cfg.get("nesterov", True),
+        )
+    return torch.optim.AdamW(param_groups)
+
+
+def _make_phase1_optimizer(model, phase1_lr, opt_cfg):
     """Phase 1: cv3 마지막 Conv2d만 학습."""
     params = [p for branch in model.model[-1].cv3 for p in branch[-1].parameters()]
-    return torch.optim.AdamW(params, lr=phase1_lr)
+    return _make_optimizer(opt_cfg, [{"params": params, "lr": phase1_lr}])
 
 
-def _make_phase2_optimizer(model, phase2_lr):
+def _make_phase2_optimizer(model, phase2_lr, opt_cfg):
     """Phase 2: backbone/neck frozen 유지, Detect head 전체 학습."""
     params = list(model.model[-1].parameters())
-    return torch.optim.AdamW(params, lr=phase2_lr)
+    return _make_optimizer(opt_cfg, [{"params": params, "lr": phase2_lr}])
 
 
-def _make_phase3_optimizer(model, head_lr, backbone_lr):
+def _make_phase3_optimizer(model, head_lr, backbone_lr, opt_cfg):
     """Phase 3: backbone/neck, head 각각 별도 lr로 전체 fine-tune."""
     backbone_neck_params = [p for layer in list(model.model)[:-1] for p in layer.parameters()]
     head_params = list(model.model[-1].parameters())
-    return torch.optim.AdamW([
+    return _make_optimizer(opt_cfg, [
         {"params": backbone_neck_params, "lr": backbone_lr},
         {"params": head_params, "lr": head_lr},
     ])
+
+
+def _make_phase3_scheduler(optimizer, warmup_epochs, remaining, lr_min):
+    """Phase 3용 스케줄러. warmup_epochs > 0이면 LinearLR → CosineAnnealingLR 순서로 연결."""
+    if warmup_epochs <= 0:
+        return CosineAnnealingLR(optimizer, T_max=max(remaining, 1), eta_min=lr_min)
+    warmup = LinearLR(optimizer, start_factor=0.01, end_factor=1.0, total_iters=warmup_epochs)
+    cosine = CosineAnnealingLR(optimizer, T_max=max(remaining - warmup_epochs, 1), eta_min=lr_min)
+    return SequentialLR(optimizer, schedulers=[warmup, cosine], milestones=[warmup_epochs])
 
 
 def main():
@@ -81,10 +103,12 @@ def main():
     phase3_head_lr = cfg["train"].get("phase3_head_lr", 0.0001)
     phase3_backbone_lr = cfg["train"].get("phase3_backbone_lr", 0.00001)
     phase3_lr_min = cfg["train"].get("phase3_lr_min", 0.000001)
+    phase3_warmup_epochs = cfg["train"].get("phase3_warmup_epochs", 0)
     total_epochs = cfg["train"]["epochs"]
     freeze_epochs = max(1, int(total_epochs * cfg["train"].get("freeze_ratio", 0.2)))
     finetune_epochs = max(1, int(total_epochs * cfg["train"].get("finetune_ratio", 0.4)))
     unfreeze_mode = cfg["train"].get("unfreeze_mode", "head")
+    opt_cfg = cfg.get("optimizer", {"type": "adamw"})
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"device: {device}")
@@ -159,8 +183,11 @@ def main():
         collate_fn=collate_fn,
     )
 
+    opt_type = opt_cfg.get("type", "adamw").lower()
+    print(f"optimizer: {opt_type}")
+
     # Phase 1 시작: cv3 마지막만 학습
-    optimizer = _make_phase1_optimizer(model, phase1_lr)
+    optimizer = _make_phase1_optimizer(model, phase1_lr, opt_cfg)
     scheduler = CosineAnnealingLR(optimizer, T_max=freeze_epochs, eta_min=phase1_lr_min)
 
     _prepare_loss_args(model)
@@ -188,10 +215,10 @@ def main():
         if epoch == freeze_epochs + 1:
             if unfreeze_mode == "head":
                 unfreeze_head(model)
-                optimizer = _make_phase2_optimizer(model, phase2_lr)
+                optimizer = _make_phase2_optimizer(model, phase2_lr, opt_cfg)
                 print(f"[{epoch:03d}] Phase 2 시작: Detect head 전체 학습 (unfreeze_mode=head)")
             else:
-                optimizer = _make_phase1_optimizer(model, phase2_lr)
+                optimizer = _make_phase1_optimizer(model, phase2_lr, opt_cfg)
                 print(f"[{epoch:03d}] Phase 2 시작: cv3 마지막 유지 (unfreeze_mode=cv3_last)")
             scheduler = CosineAnnealingLR(optimizer, T_max=finetune_epochs, eta_min=phase2_lr_min)
             if cfg["ema"]["enabled"]:
@@ -199,10 +226,14 @@ def main():
 
         elif epoch == freeze_epochs + finetune_epochs + 1:
             unfreeze_all(model)
-            optimizer = _make_phase3_optimizer(model, phase3_head_lr, phase3_backbone_lr)
+            optimizer = _make_phase3_optimizer(model, phase3_head_lr, phase3_backbone_lr, opt_cfg)
             remaining = total_epochs - freeze_epochs - finetune_epochs
-            scheduler = CosineAnnealingLR(optimizer, T_max=max(remaining, 1), eta_min=phase3_lr_min)
-            print(f"[{epoch:03d}] Phase 3 시작: backbone/neck lr={phase3_backbone_lr:.6f}, head lr={phase3_head_lr:.6f}")
+            scheduler = _make_phase3_scheduler(optimizer, phase3_warmup_epochs, remaining, phase3_lr_min)
+            # Phase 3 진입 시 EMA를 현재 모델 상태로 리셋 — Phase 2 가중치가 끌어당기는 현상 방지
+            if cfg["ema"]["enabled"]:
+                ema = ModelEMA(model).to(device)
+            warmup_info = f", warmup={phase3_warmup_epochs}ep" if phase3_warmup_epochs > 0 else ""
+            print(f"[{epoch:03d}] Phase 3 시작: backbone lr={phase3_backbone_lr:.6f}, head lr={phase3_head_lr:.6f}{warmup_info}")
 
         model.train()
         set_frozen_bn_eval(model)  # frozen BN이 batch 통계 쓰는 버그 방지

@@ -38,6 +38,14 @@ train:
   phase3_head_lr: 0.0001          # Detect head lr
   phase3_backbone_lr: 0.00001     # backbone/neck lr (head의 1/10 — pretrained 특징 보존)
   phase3_lr_min: 0.000001         # cosine 최솟값 (1e-6, 모든 param group 공통)
+  phase3_warmup_epochs: 5         # Phase 3 백본 LR warmup 에폭 수 (0=비활성화)
+
+optimizer:
+  type: adamw            # adamw | sgd
+  # SGD 전용 파라미터 (type=sgd일 때만 사용)
+  momentum: 0.937
+  weight_decay: 0.0005
+  nesterov: true
 
 ema:
   enabled: true          # EMA 모델 사용 여부
