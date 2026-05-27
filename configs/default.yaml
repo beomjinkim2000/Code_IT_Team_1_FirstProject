@@ -42,7 +42,7 @@ train:
 
 ema:
   enabled: true          # EMA 모델 사용 여부
-  decay: 0.999           # EMA decay. 데이터/step이 적으면 0.995도 실험 가능
+  decay: 0.995           # EMA decay. 데이터/step이 적으면 낮출수록 빠르게 추종
   
 split:
   method: iterative        # random / iterative
