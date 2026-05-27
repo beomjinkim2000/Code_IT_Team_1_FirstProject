@@ -41,6 +41,19 @@ def freeze_except_cv3_last(model: nn.Module) -> None:
             param.requires_grad = True
 
 
+def set_frozen_bn_eval(model: nn.Module) -> None:
+    """requires_grad=False인 BatchNorm을 eval 모드로 고정.
+
+    model.train() 호출 후 반드시 한 번 더 불러야 한다.
+    model.train()은 모든 서브모듈을 train 모드로 리셋하므로
+    frozen BN이 배치 통계를 쓰는 버그가 생긴다.
+    Phase 3처럼 전체 unfreeze 상태에서는 no-op.
+    """
+    for m in model.modules():
+        if isinstance(m, nn.BatchNorm2d) and not any(p.requires_grad for p in m.parameters()):
+            m.eval()
+
+
 def unfreeze_head(model: nn.Module) -> None:
     """Detect head(layer 22) 전체를 학습 가능 상태로 전환."""
     for param in model.model[-1].parameters():

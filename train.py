@@ -19,7 +19,7 @@ from src.engine.postprocess import PostprocessConfig, postprocess_raw_outputs
 from src.engine.predict import predict_batch
 from src.engine.train import _prepare_loss_args, train_one_epoch
 from src.utils.class_weights import compute_sample_weights
-from src.models.baseline import build_model, freeze_except_cv3_last, unfreeze_head, unfreeze_all
+from src.models.baseline import build_model, freeze_except_cv3_last, set_frozen_bn_eval, unfreeze_head, unfreeze_all
 from src.utils.collate import collate_fn
 from src.utils.config import load_config
 from src.utils.seed import set_seed
@@ -201,6 +201,7 @@ def main():
             print(f"[{epoch:03d}] Phase 3 시작: backbone/neck lr={phase3_backbone_lr:.6f}, head lr={phase3_head_lr:.6f}")
 
         model.train()
+        set_frozen_bn_eval(model)  # frozen BN이 batch 통계 쓰는 버그 방지
         train_loss, box_loss, cls_loss, dfl_loss = train_one_epoch(model, train_loader, optimizer, criterion, device, ema=ema)
         scheduler.step()
 
