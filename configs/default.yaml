@@ -106,3 +106,7 @@ augmentation:
   # 증강 후 너무 많이 잘린 bbox는 학습에서 제거
   min_area: 100               # 변환 후 bbox 최소 픽셀 면적 (이하면 제거)
   min_visibility: 0.3         # 변환 후 bbox가 원래의 이 비율 미만으로 잘리면 제거 (0~1)
+
+class_weights:
+  method: inverse_freq                # "inverse_freq" | "manual" | null(가중치 없음)
+  manual: {}                  # method="manual"일 때만 사용. {class_id: weight} 형식
