@@ -11,9 +11,9 @@ from dataclasses import dataclass
 from typing import TypedDict
 
 import torch
-from torchvision.ops import batched_nms
 
-from src.utils.bbox import cxcywh_to_xyxy
+from ultralytics.utils.nms import non_max_suppression
+
 
 class Prediction(TypedDict):
   image_id: int
@@ -31,6 +31,7 @@ class PostprocessConfig:
   conf_threshold: float = 0.5
   iou_threshold: float = 0.7
   max_detections: int = 4
+  class_agnostic_nms: bool = False
 
 def make_empty_prediction(
     image_id: int,
@@ -133,12 +134,10 @@ def _postprocess_single_raw_output(
     [4 + num_classes, num_anchors]
 
   처리 순서:
-    1. bbox 좌표와 class score 분리
-    2. class score 중 가장 높은 값을 score로 사용
-    3. cxcywh -> xyxy 변환
-    4. confidence threshold 필터링
-    5. class-aware NMS 적용
-    6. max_detections 개수 제한
+  1. 이미지 1장 raw output에 batch 차원을 추가
+  2. Ultralytics non_max_suppression() 적용
+  3. 결과 [x1, y1, x2, y2, score, class_id]를 Prediction 형식으로 변환
+  4. 예측이 없으면 빈 Prediction 형식 유지
   """
   if raw_output.ndim != 2:
     raise ValueError("이미지 1장 raw_output은 [4 + num_classes, num_anchors] 형태여야 합니다.")
@@ -146,35 +145,28 @@ def _postprocess_single_raw_output(
   if raw_output.shape[0] <= 4:
     raise ValueError("raw_output에는 bbox 4개 값과 최소 1개 이상의 class score가 필요합니다.")
 
-  cxcywh_boxes = raw_output[:4, :].transpose(0, 1)
-  class_scores = raw_output[4:, :].transpose(0, 1)
-
-  scores, labels = torch.max(class_scores, dim=1)
-  boxes = cxcywh_to_xyxy(cxcywh_boxes).to(dtype=torch.float32)
-  labels = labels.to(dtype=torch.int64)
-  scores = scores.to(dtype=torch.float32)
-
-  keep = scores >= config.conf_threshold
-  boxes = boxes[keep]
-  labels = labels[keep]
-  scores = scores[keep]
-
-  if scores.numel() == 0:
-    return make_empty_prediction(image_id=image_id, device=raw_output.device)
-
-  keep_indices = batched_nms(
-    boxes=boxes,
-    scores=scores,
-    idxs=labels,
-    iou_threshold=config.iou_threshold,
+  detections = non_max_suppression(
+    prediction=raw_output.unsqueeze(0),
+    conf_thres=config.conf_threshold,
+    iou_thres=config.iou_threshold,
+    agnostic=config.class_agnostic_nms,
+    max_det=config.max_detections,
+    nc=raw_output.shape[0] - 4,
   )
-  keep_indices = keep_indices[: config.max_detections]
+
+  det = detections[0]
+
+  if det.numel() == 0:
+    return make_empty_prediction(image_id=image_id, device=raw_output.device)
+  boxes = det[:, :4]
+  scores = det[:, 4]
+  labels = det[:, 5]
 
   return {
     "image_id": int(image_id),
-    "boxes": boxes[keep_indices].to(dtype=torch.float32),
-    "labels": labels[keep_indices].to(dtype=torch.int64),
-    "scores": scores[keep_indices].to(dtype=torch.float32),
+    "boxes": boxes.to(dtype=torch.float32),
+    "labels": labels.to(dtype=torch.int64),
+    "scores": scores.to(dtype=torch.float32),
   }
 
 def postprocess_raw_outputs(
