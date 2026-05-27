@@ -25,11 +25,21 @@ def save_checkpoint(        #모델과 옵티마이저의 상태를 저장하는
         "val_mAP": val_mAP,     #현재 validation mAP 점수
     }
 
-    path = checkpoint_dir / f"epoch_{epoch}.pt"     #체크포인트 파일의 경로를 epoch 번호를 포함하여 만듦 ex) "outputs/checkpoints/epoch_10.pt"
-    torch.save(checkpoint, path)        #체크포인트 딕셔너리를 지정한 경로에 저장
+    path = checkpoint_dir / f"epoch_{epoch}.pt"
+    torch.save(checkpoint, path)
 
-    if is_best:     #현재 모델이 가장 좋은 모델인 경우, "best_model.pt"라는 이름으로 체크포인트를 저장하여 나중에 쉽게 불러올 수 있도록 함
-        torch.save(checkpoint, checkpoint_dir / "best_model.pt")        #checkpoint 딕셔너리를 "best_model.pt"라는 이름으로 저장
+    if is_best:
+        torch.save(checkpoint, checkpoint_dir / "best_model.pt")
+
+    if ema is not None:
+        ema_checkpoint = {
+            "epoch": epoch,
+            "model_state": ema.state_dict(),
+            "val_mAP": val_mAP,
+        }
+        torch.save(ema_checkpoint, checkpoint_dir / f"epoch_{epoch}_ema.pt")
+        if is_best:
+            torch.save(ema_checkpoint, checkpoint_dir / "best_model_ema.pt")
 
     return path
 
