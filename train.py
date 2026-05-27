@@ -1,23 +1,25 @@
-import argparse
+﻿import argparse
 import csv
 from pathlib import Path
 
 import torch
 from torch.optim.lr_scheduler import CosineAnnealingLR
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, WeightedRandomSampler
 from tqdm import tqdm
 from ultralytics.utils.loss import v8DetectionLoss
 
 from src.data.dataset import PillDataset, RAW_DATA_ROOT
 from src.data.mosaic import MosaicDataset
-from src.data.split import train_val_split
+from src.data.split import build_split_metadata, train_val_split
 from src.data.transforms import train_transform, val_transform
 from src.engine.checkpoint import save_checkpoint
+from src.engine.ema import ModelEMA
 from src.engine.evaluate import evaluate
 from src.engine.postprocess import PostprocessConfig, postprocess_raw_outputs
 from src.engine.predict import predict_batch
 from src.engine.train import _prepare_loss_args, train_one_epoch
-from src.models.baseline import build_model, freeze_except_cv3_last, unfreeze_head, unfreeze_all
+from src.utils.class_weights import compute_sample_weights
+from src.models.baseline import build_model, freeze_except_cv3_last, set_frozen_bn_eval, unfreeze_head, unfreeze_all
 from src.utils.collate import collate_fn
 from src.utils.config import load_config
 from src.utils.seed import set_seed
@@ -90,15 +92,23 @@ def main():
     model = build_model(cfg["data"]["nc"])
     freeze_except_cv3_last(model)
     model.to(device)
+    ema = ModelEMA(model).to(device) if cfg["ema"]["enabled"] else None
 
     annotations = PillDataset.load_annotations()
     category_to_label = cfg["data"]["category_to_label"]
+    labels_by_id, image_id_by_file = build_split_metadata(annotations, category_to_label)
+    split_cfg = cfg.get("split", {})
 
     all_image_files = sorted((RAW_DATA_ROOT / "train_images").glob("*.png"))
     train_files, val_files = train_val_split(
         all_image_files,
         val_ratio=cfg["train"]["val_ratio"],
         seed=cfg["train"]["seed"],
+        method=split_cfg.get("method", "random"),
+        labels_by_id=labels_by_id,
+        image_id_by_file=image_id_by_file,
+        num_classes=cfg["data"]["nc"],
+        output_dir=split_cfg.get("output_dir"),
     )
     print(f"train: {len(train_files)}장 / val: {len(val_files)}장")
 
@@ -125,12 +135,23 @@ def main():
         image_files=val_files,
     )
 
-    train_loader = DataLoader(
-        train_ds,
-        batch_size=cfg["train"]["batch_size"],
-        shuffle=True,
-        collate_fn=collate_fn,
-    )
+    cw_cfg = cfg.get("class_weights") or {}
+    cw_method = cw_cfg.get("method")
+    if cw_method:
+        sample_weights = compute_sample_weights(
+            image_paths=train_ds.dataset.image_paths,
+            annotations=annotations,
+            category_to_label=category_to_label,
+            num_classes=cfg["data"]["nc"],
+            method=cw_method,
+            manual=cw_cfg.get("manual"),
+        )
+        sampler = WeightedRandomSampler(sample_weights, num_samples=len(sample_weights), replacement=True)
+        train_loader = DataLoader(train_ds, batch_size=cfg["train"]["batch_size"], sampler=sampler, collate_fn=collate_fn)
+        print(f"class_weights: method={cw_method}, sample_weights min={min(sample_weights):.3f} max={max(sample_weights):.3f}")
+    else:
+        train_loader = DataLoader(train_ds, batch_size=cfg["train"]["batch_size"], shuffle=True, collate_fn=collate_fn)
+
     val_loader = DataLoader(
         val_ds,
         batch_size=cfg["train"]["batch_size"],
@@ -155,7 +176,10 @@ def main():
     log_dir.mkdir(parents=True, exist_ok=True)
     log_path = log_dir / "metrics.csv"
     log_file = log_path.open("w", newline="")
-    log_writer = csv.DictWriter(log_file, fieldnames=["epoch", "train_loss", "box_loss", "cls_loss", "dfl_loss", "val_mAP", "val_mAP_50", "lr"])
+    log_writer = csv.DictWriter(log_file, fieldnames=[
+        "epoch", "train_loss", "box_loss", "cls_loss", "dfl_loss",
+        "val_mAP_raw", "val_mAP_50_raw", "val_mAP_ema", "val_mAP_50_ema", "lr",
+    ])
     log_writer.writeheader()
 
     best_mAP = -1.0
@@ -172,7 +196,6 @@ def main():
             scheduler = CosineAnnealingLR(optimizer, T_max=finetune_epochs, eta_min=phase2_lr_min)
 
         elif epoch == freeze_epochs + finetune_epochs + 1:
-            # Phase 3: backbone/neck까지 전체 fine-tune
             unfreeze_all(model)
             optimizer = _make_phase3_optimizer(model, phase3_head_lr, phase3_backbone_lr)
             remaining = total_epochs - freeze_epochs - finetune_epochs
@@ -180,45 +203,58 @@ def main():
             print(f"[{epoch:03d}] Phase 3 시작: backbone/neck lr={phase3_backbone_lr:.6f}, head lr={phase3_head_lr:.6f}")
 
         model.train()
-        train_loss, box_loss, cls_loss, dfl_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
+        set_frozen_bn_eval(model)  # frozen BN이 batch 통계 쓰는 버그 방지
+        train_loss, box_loss, cls_loss, dfl_loss = train_one_epoch(model, train_loader, optimizer, criterion, device, ema=ema)
         scheduler.step()
 
+        # 원본 모델 검증
         model.eval()
-        predictions, targets = _collect_val_predictions(
-            model, val_loader, device, eval_postprocess_cfg
-        )
-        eval_result = evaluate(predictions, targets)
-        val_mAP = eval_result["mAP"]
-        val_mAP_50 = eval_result["mAP_50"]
+        raw_preds, raw_targets = _collect_val_predictions(model, val_loader, device, eval_postprocess_cfg)
+        raw_result = evaluate(raw_preds, raw_targets)
+        val_mAP_raw = raw_result["mAP"]
+        val_mAP_50_raw = raw_result["mAP_50"]
 
-        is_best = val_mAP > best_mAP
+        # EMA 모델 검증 (EMA 비활성화 시 원본 결과 그대로 사용)
+        if ema is not None:
+            ema.model.eval()
+            ema_preds, ema_targets = _collect_val_predictions(ema.model, val_loader, device, eval_postprocess_cfg)
+            ema_result = evaluate(ema_preds, ema_targets)
+            val_mAP_ema = ema_result["mAP"]
+            val_mAP_50_ema = ema_result["mAP_50"]
+        else:
+            val_mAP_ema = val_mAP_raw
+            val_mAP_50_ema = val_mAP_50_raw
+
+        is_best = val_mAP_ema > best_mAP
         if is_best:
-            best_mAP = val_mAP
+            best_mAP = val_mAP_ema
 
         save_checkpoint(
             model,
             optimizer,
             epoch,
-            val_mAP,
+            val_mAP_ema,
             checkpoint_dir=cfg["paths"]["checkpoint"],
             is_best=is_best,
+            ema=ema,
         )
 
         current_lr = scheduler.get_last_lr()[-1]
         log_writer.writerow({
             "epoch": epoch, "train_loss": round(train_loss, 6),
             "box_loss": round(box_loss, 6), "cls_loss": round(cls_loss, 6), "dfl_loss": round(dfl_loss, 6),
-            "val_mAP": round(val_mAP, 6), "val_mAP_50": round(val_mAP_50, 6), "lr": round(current_lr, 8),
+            "val_mAP_raw": round(val_mAP_raw, 6), "val_mAP_50_raw": round(val_mAP_50_raw, 6),
+            "val_mAP_ema": round(val_mAP_ema, 6), "val_mAP_50_ema": round(val_mAP_50_ema, 6),
+            "lr": round(current_lr, 8),
         })
         log_file.flush()
         print(
             f"[{epoch:03d}/{total_epochs:03d}] loss: {train_loss:.4f}  box: {box_loss:.4f}  cls: {cls_loss:.4f}  dfl: {dfl_loss:.4f}"
-            f"  mAP: {val_mAP:.4f}  mAP@50: {val_mAP_50:.4f}  lr: {current_lr:.6f}"
+            f"  mAP(raw): {val_mAP_raw:.4f}  mAP(ema): {val_mAP_ema:.4f}  lr: {current_lr:.6f}"
         )
 
     log_file.close()
-    print(f"학습 완료. best_mAP: {best_mAP:.4f}")
+    print(f"학습 완료. best_mAP(ema): {best_mAP:.4f}")
 
 
-if __name__ == "__main__":
-    main()
+

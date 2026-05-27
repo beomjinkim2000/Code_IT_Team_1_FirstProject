@@ -1,4 +1,4 @@
-# null 체크 대상 필드 목록 — 여기에 등록된 필드만 validate_config()가 검사
+﻿# null 체크 대상 필드 목록 — 여기에 등록된 필드만 validate_config()가 검사
 _required:
   - model.num_classes
   - data.nc
@@ -39,6 +39,14 @@ train:
   phase3_head_lr: 0.0001          # Detect head lr (1e-4)
   phase3_backbone_lr: 0.00001     # backbone/neck lr (1e-5, head의 1/10 — pretrained 특징 보존)
   phase3_lr_min: 0.000001         # cosine 최솟값 (1e-6, 모든 param group 공통)
+
+ema:
+  enabled: true          # EMA 모델 사용 여부
+  decay: 0.999           # EMA decay. 데이터/step이 적으면 0.995도 실험 가능
+  
+split:
+  method: iterative        # random / iterative
+  output_dir: data/splits
 
 paths:
   checkpoint: outputs/checkpoints/
@@ -109,3 +117,7 @@ augmentation:
   # 증강 후 너무 많이 잘린 bbox는 학습에서 제거
   min_area: 100               # 변환 후 bbox 최소 픽셀 면적 (이하면 제거)
   min_visibility: 0.3         # 변환 후 bbox가 원래의 이 비율 미만으로 잘리면 제거 (0~1)
+
+class_weights:
+  method: inverse_freq                # "inverse_freq" | "manual" | null(가중치 없음)
+  manual: {}                  # method="manual"일 때만 사용. {class_id: weight} 형식

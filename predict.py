@@ -1,4 +1,4 @@
-import argparse
+﻿import argparse
 import json
 from pathlib import Path
 
@@ -35,6 +35,17 @@ def main():
     checkpoint = torch.load(ckpt_path, map_location=device, weights_only=True)
     model.load_state_dict(checkpoint["model_state"])
 
+    if args.checkpoint:
+        ckpt_path = args.checkpoint
+    elif cfg["ema"]["enabled"] and (checkpoint_dir / "best_model_ema.pt").exists():
+        ckpt_path = checkpoint_dir / "best_model_ema.pt"
+    else:
+        ckpt_path = checkpoint_dir / "best_model.pt"
+    print(f"체크포인트 로드: {ckpt_path}")
+    checkpoint = torch.load(ckpt_path, map_location=device, weights_only=True)
+
+    model = build_model(cfg["data"]["nc"])
+    model.load_state_dict(checkpoint["model_state"])
     model.to(device)
     model.eval()
 
@@ -118,5 +129,4 @@ def main():
     print(f"submission.csv 저장: {submission_path}")
 
 
-if __name__ == "__main__":
-    main()
+
