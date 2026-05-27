@@ -17,9 +17,28 @@ data:
 train:
   epochs: 50
   batch_size: 16
-  lr: 0.001
   img_size: 640
   seed: 42
+  val_ratio: 0.2        # train/val 분할 비율. 0.2 = 8:2
+
+  # --- Phase 비율 ---
+  freeze_ratio: 0.2     # Phase 1 에폭 비율 (예: 50 × 0.2 = 10 에폭)
+  finetune_ratio: 0.4   # Phase 2 에폭 비율 (예: 50 × 0.4 = 20 에폭)
+                        # Phase 3 = 나머지 (1 - 0.2 - 0.4 = 0.4 → 20 에폭)
+  unfreeze_mode: head   # Phase 2 학습 범위: "head"(Detect 전체) / "cv3_last"(cv3 마지막만 유지)
+
+  # --- Phase 1: cv3 마지막 Conv2d만 학습 ---
+  phase1_lr: 0.001
+  phase1_lr_min: 0.00001
+
+  # --- Phase 2: head 전체 또는 cv3_last 유지 ---
+  phase2_lr: 0.001
+  phase2_lr_min: 0.00001
+
+  # --- Phase 3: backbone/neck + head 전체 fine-tune ---
+  phase3_head_lr: 0.0001          # Detect head lr (1e-4)
+  phase3_backbone_lr: 0.00001     # backbone/neck lr (1e-5, head의 1/10 — pretrained 특징 보존)
+  phase3_lr_min: 0.000001         # cosine 최솟값 (1e-6, 모든 param group 공통)
 
 paths:
   checkpoint: outputs/checkpoints/
@@ -37,3 +56,56 @@ postprocess:
 
 eval:
   conf_threshold: 0.001  # mAP 계산 전용 (PR curve 최대 recall 확보)
+
+augmentation:
+  # --- Mosaic ---
+  mosaic_p: 0.0                # 이미지 4장을 합치는 Mosaic 증강 적용 확률 (0=끄기, 1=항상)
+  mosaic_min_bbox_size: 2      # Mosaic 리사이즈 후 이 픽셀 이하 박스는 제거
+
+  # --- 기하 변환 (HorizontalFlip / VerticalFlip / RandomRotate90 / SafeRotate) ---
+  # 알약은 방향 무관 → flip/rotate로 위치 다양성 확보, 촬영 배치 패턴 편향 해소
+  horizontal_flip_p: 0.5      # 좌우 반전 적용 확률 (0~1)
+  vertical_flip_p: 0.5        # 상하 반전 적용 확률 (0~1)
+  random_rotate90_p: 0.5      # 90도 단위 회전 적용 확률 (0~1)
+  safe_rotate_limit: 30       # 임의 회전 최대 각도 (-limit ~ +limit 도)
+  safe_rotate_p: 0.5          # 임의 회전 적용 확률 (0~1)
+
+  # --- 밝기 / 대비 (RandomBrightnessContrast) ---
+  # 조명 변화 대응. limit이 클수록 밝기/대비 변화폭이 커짐
+  brightness_limit: 0.2       # 밝기 변화 범위 (-limit ~ +limit)
+  contrast_limit: 0.2         # 대비 변화 범위 (-limit ~ +limit)
+  brightness_contrast_p: 0.5  # 적용 확률 (0~1)
+
+  # --- 색감 (HueSaturationValue) ---
+  # 색이 클래스 구분 특성이라 hue는 작게. sat/val은 약간 허용
+  hue_shift_limit: 10         # 색상(Hue) 변화폭. 크면 빨간 알약이 다른 색으로 바뀔 수 있어 작게 유지
+  sat_shift_limit: 20         # 채도(Saturation) 변화폭
+  val_shift_limit: 20         # 명도(Value) 변화폭
+  hue_saturation_p: 0.3       # 적용 확률 (0~1)
+
+  # --- 음각 강조 (CLAHE / Sharpen) ---
+  # 색 유사 알약 간 각인(음각) 구분력 향상 목적
+  clahe_clip_limit: 2.0       # CLAHE 대비 증폭 최대값. 클수록 강하게 강조 (권장 2~4)
+  clahe_tile_grid_size: 8     # CLAHE 타일 분할 수 (NxN). 클수록 세밀하게 적용
+  clahe_p: 0.3                # 적용 확률 (0~1)
+  sharpen_alpha_min: 0.2      # 샤픈 강도 최솟값 (0=원본, 1=완전 샤픈)
+  sharpen_alpha_max: 0.5      # 샤픈 강도 최댓값
+  sharpen_lightness_min: 0.5  # 샤픈 후 밝기 보정 최솟값 (1=변화 없음)
+  sharpen_lightness_max: 1.0  # 샤픈 후 밝기 보정 최댓값
+  sharpen_p: 0.3              # 적용 확률 (0~1)
+
+  # --- 노이즈 (GaussNoise) ---
+  # 카메라 노이즈 대응
+  gauss_noise_var_min: 10.0   # 가우시안 노이즈 분산 최솟값 (클수록 노이즈 강함)
+  gauss_noise_var_max: 50.0   # 가우시안 노이즈 분산 최댓값
+  gauss_noise_p: 0.2          # 적용 확률 (0~1)
+
+  # --- 크기 변화 (RandomScale) ---
+  # bbox 위치 패턴 다양성 확보
+  random_scale_limit: 0.2     # 크기 변화 범위 (-limit ~ +limit 비율). 0.2 = ±20%
+  random_scale_p: 0.3         # 적용 확률 (0~1)
+
+  # --- bbox 필터링 기준 ---
+  # 증강 후 너무 많이 잘린 bbox는 학습에서 제거
+  min_area: 100               # 변환 후 bbox 최소 픽셀 면적 (이하면 제거)
+  min_visibility: 0.3         # 변환 후 bbox가 원래의 이 비율 미만으로 잘리면 제거 (0~1)

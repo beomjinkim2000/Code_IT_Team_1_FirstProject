@@ -32,6 +32,27 @@ def _adapt_num_classes(model: nn.Module, num_classes: int) -> None:
     #model.names = {i: name for i, name in enumerate(class_names)}      #class_names가 작성되면 해당 코드로 수정
 
 
+def freeze_except_cv3_last(model: nn.Module) -> None:
+    """cv3 마지막 Conv2d(새로 초기화된 분류 레이어)만 남기고 전체 고정."""
+    for param in model.parameters():
+        param.requires_grad = False
+    for branch in model.model[-1].cv3:
+        for param in branch[-1].parameters():
+            param.requires_grad = True
+
+
+def unfreeze_head(model: nn.Module) -> None:
+    """Detect head(layer 22) 전체를 학습 가능 상태로 전환."""
+    for param in model.model[-1].parameters():
+        param.requires_grad = True
+
+
+def unfreeze_all(model: nn.Module) -> None:
+    """전체 레이어 가중치를 학습 가능 상태로 되돌린다."""
+    for param in model.parameters():
+        param.requires_grad = True
+
+
 def build_model(num_classes: int) -> torch.nn.Module:
     cfg = load_config(validate=False)
     model_name = cfg["model"]["name"]
