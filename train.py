@@ -4,13 +4,13 @@ from pathlib import Path
 
 import torch
 from torch.optim.lr_scheduler import CosineAnnealingLR
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, WeightedRandomSampler
 from tqdm import tqdm
 from ultralytics.utils.loss import v8DetectionLoss
 
 from src.data.dataset import PillDataset, RAW_DATA_ROOT
 from src.data.mosaic import MosaicDataset
-from src.data.split import train_val_split
+from src.data.split import build_split_metadata, train_val_split
 from src.data.transforms import train_transform, val_transform
 from src.engine.checkpoint import save_checkpoint
 from src.engine.ema import ModelEMA
@@ -18,6 +18,7 @@ from src.engine.evaluate import evaluate
 from src.engine.postprocess import PostprocessConfig, postprocess_raw_outputs
 from src.engine.predict import predict_batch
 from src.engine.train import _prepare_loss_args, train_one_epoch
+from src.utils.class_weights import compute_sample_weights
 from src.models.baseline import build_model, freeze_except_cv3_last, unfreeze_head, unfreeze_all
 from src.utils.collate import collate_fn
 from src.utils.config import load_config
@@ -95,12 +96,19 @@ def main():
 
     annotations = PillDataset.load_annotations()
     category_to_label = cfg["data"]["category_to_label"]
+    labels_by_id, image_id_by_file = build_split_metadata(annotations, category_to_label)
+    split_cfg = cfg.get("split", {})
 
     all_image_files = sorted((RAW_DATA_ROOT / "train_images").glob("*.png"))
     train_files, val_files = train_val_split(
         all_image_files,
         val_ratio=cfg["train"]["val_ratio"],
         seed=cfg["train"]["seed"],
+        method=split_cfg.get("method", "random"),
+        labels_by_id=labels_by_id,
+        image_id_by_file=image_id_by_file,
+        num_classes=cfg["data"]["nc"],
+        output_dir=split_cfg.get("output_dir"),
     )
     print(f"train: {len(train_files)}장 / val: {len(val_files)}장")
 
@@ -127,12 +135,23 @@ def main():
         image_files=val_files,
     )
 
-    train_loader = DataLoader(
-        train_ds,
-        batch_size=cfg["train"]["batch_size"],
-        shuffle=True,
-        collate_fn=collate_fn,
-    )
+    cw_cfg = cfg.get("class_weights") or {}
+    cw_method = cw_cfg.get("method")
+    if cw_method:
+        sample_weights = compute_sample_weights(
+            image_paths=train_ds.dataset.image_paths,
+            annotations=annotations,
+            category_to_label=category_to_label,
+            num_classes=cfg["data"]["nc"],
+            method=cw_method,
+            manual=cw_cfg.get("manual"),
+        )
+        sampler = WeightedRandomSampler(sample_weights, num_samples=len(sample_weights), replacement=True)
+        train_loader = DataLoader(train_ds, batch_size=cfg["train"]["batch_size"], sampler=sampler, collate_fn=collate_fn)
+        print(f"class_weights: method={cw_method}, sample_weights min={min(sample_weights):.3f} max={max(sample_weights):.3f}")
+    else:
+        train_loader = DataLoader(train_ds, batch_size=cfg["train"]["batch_size"], shuffle=True, collate_fn=collate_fn)
+
     val_loader = DataLoader(
         val_ds,
         batch_size=cfg["train"]["batch_size"],

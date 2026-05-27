@@ -44,6 +44,10 @@ ema:
   enabled: true          # EMA 모델 사용 여부
   decay: 0.999           # EMA decay. 데이터/step이 적으면 0.995도 실험 가능
   
+split:
+  method: iterative        # random / iterative
+  output_dir: data/splits
+
 paths:
   checkpoint: outputs/checkpoints/
   prediction: outputs/predictions/
@@ -53,6 +57,7 @@ postprocess:
   conf_threshold: 0.25   # predict/submission 용
   iou_threshold: 0.7
   max_detections: 4
+  class_agnostic_nms: false
 
 eval:
   conf_threshold: 0.001  # mAP 계산 전용 (PR curve 최대 recall 확보)
@@ -110,3 +115,6 @@ augmentation:
   min_area: 100               # 변환 후 bbox 최소 픽셀 면적 (이하면 제거)
   min_visibility: 0.3         # 변환 후 bbox가 원래의 이 비율 미만으로 잘리면 제거 (0~1)
 
+class_weights:
+  method: inverse_freq                # "inverse_freq" | "manual" | null(가중치 없음)
+  manual: {}                  # method="manual"일 때만 사용. {class_id: weight} 형식
