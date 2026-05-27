@@ -28,14 +28,17 @@ def main():
     print(f"device: {device}")
 
     checkpoint_dir = Path(cfg["paths"]["checkpoint"])
-    ckpt_path = args.checkpoint or checkpoint_dir / "best_model.pt"
+    if args.checkpoint:
+        ckpt_path = args.checkpoint
+    elif cfg["ema"]["enabled"] and (checkpoint_dir / "best_model_ema.pt").exists():
+        ckpt_path = checkpoint_dir / "best_model_ema.pt"
+    else:
+        ckpt_path = checkpoint_dir / "best_model.pt"
     print(f"체크포인트 로드: {ckpt_path}")
     checkpoint = torch.load(ckpt_path, map_location=device, weights_only=True)
-    state_key = "ema_state" if cfg["ema"]["enabled"] else "model_state"     #ema가 켜져 있으면 ema 모델의 가중치를 로드, 아니면 현재 모델의 가중치를 로드
-    print(f"사용 가중치: {state_key}")      #사용중인 가중치가 ema인지, 일반 모델인지 출력
 
     model = build_model(cfg["data"]["nc"])
-    model.load_state_dict(checkpoint[state_key])
+    model.load_state_dict(checkpoint["model_state"])
     model.to(device)
     model.eval()
 
