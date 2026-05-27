@@ -92,7 +92,7 @@ def main():
     model = build_model(cfg["data"]["nc"])
     freeze_except_cv3_last(model)
     model.to(device)
-    ema = ModelEMA(model).to(device) if cfg["ema"]["enabled"] else None
+    ema = None  # Phase 2 시작 시 초기화 (Phase 1은 대부분 frozen → COCO 초기값 평균 방지)
 
     annotations = PillDataset.load_annotations()
     category_to_label = cfg["data"]["category_to_label"]
@@ -194,6 +194,8 @@ def main():
                 optimizer = _make_phase1_optimizer(model, phase2_lr)
                 print(f"[{epoch:03d}] Phase 2 시작: cv3 마지막 유지 (unfreeze_mode=cv3_last)")
             scheduler = CosineAnnealingLR(optimizer, T_max=finetune_epochs, eta_min=phase2_lr_min)
+            if cfg["ema"]["enabled"]:
+                ema = ModelEMA(model).to(device)
 
         elif epoch == freeze_epochs + finetune_epochs + 1:
             unfreeze_all(model)
