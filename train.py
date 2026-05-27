@@ -78,9 +78,10 @@ def main():
     phase1_lr_min = cfg["train"].get("phase1_lr_min", 0.00001)
     phase2_lr = cfg["train"].get("phase2_lr", 0.001)
     phase2_lr_min = cfg["train"].get("phase2_lr_min", 0.00001)
-    phase3_head_lr = cfg["train"].get("phase3_head_lr", 0.001)
+    phase3_lr_inherit = cfg["train"].get("phase3_lr_inherit", True)
+    phase3_head_lr = cfg["train"].get("phase3_head_lr", 0.0001)
     phase3_backbone_lr = cfg["train"].get("phase3_backbone_lr", 0.00001)
-    phase3_lr_min = cfg["train"].get("phase3_lr_min", 0.00001)
+    phase3_lr_min = cfg["train"].get("phase3_lr_min", 0.000001)
     total_epochs = cfg["train"]["epochs"]
     freeze_epochs = max(1, int(total_epochs * cfg["train"].get("freeze_ratio", 0.2)))
     finetune_epochs = max(1, int(total_epochs * cfg["train"].get("finetune_ratio", 0.4)))
@@ -200,10 +201,18 @@ def main():
 
         elif epoch == freeze_epochs + finetune_epochs + 1:
             unfreeze_all(model)
-            optimizer = _make_phase3_optimizer(model, phase3_head_lr, phase3_backbone_lr)
+            if phase3_lr_inherit:
+                inherited_lr = scheduler.get_last_lr()[-1]
+                p3_head_lr = inherited_lr
+                p3_backbone_lr = inherited_lr * 0.1
+                print(f"[{epoch:03d}] Phase 3 시작: Phase 2 LR 이어받기 head={p3_head_lr:.6f}, backbone={p3_backbone_lr:.7f}")
+            else:
+                p3_head_lr = phase3_head_lr
+                p3_backbone_lr = phase3_backbone_lr
+                print(f"[{epoch:03d}] Phase 3 시작: 고정 LR head={p3_head_lr:.6f}, backbone={p3_backbone_lr:.7f}")
+            optimizer = _make_phase3_optimizer(model, p3_head_lr, p3_backbone_lr)
             remaining = total_epochs - freeze_epochs - finetune_epochs
             scheduler = CosineAnnealingLR(optimizer, T_max=max(remaining, 1), eta_min=phase3_lr_min)
-            print(f"[{epoch:03d}] Phase 3 시작: backbone/neck lr={phase3_backbone_lr:.6f}, head lr={phase3_head_lr:.6f}")
 
         model.train()
         set_frozen_bn_eval(model)  # frozen BN이 batch 통계 쓰는 버그 방지
