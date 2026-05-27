@@ -257,4 +257,5 @@ def main():
     print(f"학습 완료. best_mAP(ema): {best_mAP:.4f}")
 
 
+main()
 

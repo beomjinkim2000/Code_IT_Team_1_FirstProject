@@ -102,4 +102,5 @@ def main():
     print(f"submission.csv 저장: {submission_path}")
 
 
+main()
 
