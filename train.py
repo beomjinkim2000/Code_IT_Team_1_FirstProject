@@ -92,7 +92,7 @@ def main():
     model = build_model(cfg["data"]["nc"])
     freeze_except_cv3_last(model)
     model.to(device)
-    ema = ModelEMA(model).to(device) if cfg["ema"]["enabled"] else None
+    ema = None  # EMA는 Phase 2 시작 시 초기화 (Phase 1 COCO 가중치에 끌려가는 문제 방지)
 
     annotations = PillDataset.load_annotations()
     category_to_label = cfg["data"]["category_to_label"]
@@ -102,7 +102,7 @@ def main():
     all_image_files = sorted((RAW_DATA_ROOT / "train_images").glob("*.png"))
     train_files, val_files = train_val_split(
         all_image_files,
-        val_ratio=cfg["train"]["val_ratio"],
+        val_ratio=split_cfg.get("val_ratio", 0.2),
         seed=cfg["train"]["seed"],
         method=split_cfg.get("method", "random"),
         labels_by_id=labels_by_id,
@@ -194,6 +194,9 @@ def main():
                 optimizer = _make_phase1_optimizer(model, phase2_lr)
                 print(f"[{epoch:03d}] Phase 2 시작: cv3 마지막 유지 (unfreeze_mode=cv3_last)")
             scheduler = CosineAnnealingLR(optimizer, T_max=finetune_epochs, eta_min=phase2_lr_min)
+            if cfg["ema"]["enabled"]:
+                ema = ModelEMA(model).to(device)
+                print(f"[{epoch:03d}] EMA 초기화 — Phase 1 완료 후 현재 모델 기준")
 
         elif epoch == freeze_epochs + finetune_epochs + 1:
             unfreeze_all(model)

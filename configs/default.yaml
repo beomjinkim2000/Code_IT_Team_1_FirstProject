@@ -19,7 +19,6 @@ train:
   batch_size: 16
   img_size: 640
   seed: 42
-  val_ratio: 0.2        # train/val 분할 비율. 0.2 = 8:2
 
   # --- Phase 비율 ---
   freeze_ratio: 0.2     # Phase 1 에폭 비율 (예: 50 × 0.2 = 10 에폭)
@@ -47,6 +46,7 @@ ema:
 split:
   method: iterative        # random / iterative
   output_dir: data/splits
+  val_ratio: 0.2           # train/val 분할 비율. 0.2 = 8:2
 
 paths:
   checkpoint: outputs/checkpoints/
