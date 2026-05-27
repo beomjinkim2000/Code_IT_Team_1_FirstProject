@@ -73,8 +73,13 @@ def test_mosaic_p0_returns_inner_dataset_item() -> None:
     img_size = 64
     inner = MockDataset(size=4, img_size=img_size)
     ds = MosaicDataset(inner, img_size=img_size, p=0.0)
+
+    torch.manual_seed(0)
     img_inner, _ = inner[0]
+
+    torch.manual_seed(0)
     img_mosaic, _ = ds[0]
+
     assert torch.allclose(img_inner, img_mosaic)
 
 
