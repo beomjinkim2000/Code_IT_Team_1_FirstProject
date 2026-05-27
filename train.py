@@ -10,7 +10,7 @@ from ultralytics.utils.loss import v8DetectionLoss
 
 from src.data.dataset import PillDataset, RAW_DATA_ROOT
 from src.data.mosaic import MosaicDataset
-from src.data.split import train_val_split
+from src.data.split import build_split_metadata, train_val_split
 from src.data.transforms import train_transform, val_transform
 from src.engine.checkpoint import save_checkpoint
 from src.engine.evaluate import evaluate
@@ -93,12 +93,19 @@ def main():
 
     annotations = PillDataset.load_annotations()
     category_to_label = cfg["data"]["category_to_label"]
+    labels_by_id, image_id_by_file = build_split_metadata(annotations, category_to_label)
+    split_cfg = cfg.get("split", {})
 
     all_image_files = sorted((RAW_DATA_ROOT / "train_images").glob("*.png"))
     train_files, val_files = train_val_split(
         all_image_files,
         val_ratio=cfg["train"]["val_ratio"],
         seed=cfg["train"]["seed"],
+        method=split_cfg.get("method", "random"),
+        labels_by_id=labels_by_id,
+        image_id_by_file=image_id_by_file,
+        num_classes=cfg["data"]["nc"],
+        output_dir=split_cfg.get("output_dir"),
     )
     print(f"train: {len(train_files)}장 / val: {len(val_files)}장")
 
