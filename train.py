@@ -78,7 +78,6 @@ def main():
     phase1_lr_min = cfg["train"].get("phase1_lr_min", 0.00001)
     phase2_lr = cfg["train"].get("phase2_lr", 0.001)
     phase2_lr_min = cfg["train"].get("phase2_lr_min", 0.00001)
-    phase3_lr_inherit = cfg["train"].get("phase3_lr_inherit", True)
     phase3_head_lr = cfg["train"].get("phase3_head_lr", 0.0001)
     phase3_backbone_lr = cfg["train"].get("phase3_backbone_lr", 0.00001)
     phase3_lr_min = cfg["train"].get("phase3_lr_min", 0.000001)
@@ -93,7 +92,7 @@ def main():
     model = build_model(cfg["data"]["nc"])
     freeze_except_cv3_last(model)
     model.to(device)
-    ema = None  # EMA는 Phase 2 시작 시 초기화 (Phase 1 COCO 가중치에 끌려가는 문제 방지)
+    ema = ModelEMA(model).to(device) if cfg["ema"]["enabled"] else None
 
     annotations = PillDataset.load_annotations()
     category_to_label = cfg["data"]["category_to_label"]
@@ -195,24 +194,13 @@ def main():
                 optimizer = _make_phase1_optimizer(model, phase2_lr)
                 print(f"[{epoch:03d}] Phase 2 시작: cv3 마지막 유지 (unfreeze_mode=cv3_last)")
             scheduler = CosineAnnealingLR(optimizer, T_max=finetune_epochs, eta_min=phase2_lr_min)
-            if cfg["ema"]["enabled"]:
-                ema = ModelEMA(model).to(device)
-                print(f"[{epoch:03d}] EMA 초기화 — Phase 1 완료 후 현재 모델 기준")
 
         elif epoch == freeze_epochs + finetune_epochs + 1:
             unfreeze_all(model)
-            if phase3_lr_inherit:
-                inherited_lr = scheduler.get_last_lr()[-1]
-                p3_head_lr = inherited_lr
-                p3_backbone_lr = inherited_lr * 0.1
-                print(f"[{epoch:03d}] Phase 3 시작: Phase 2 LR 이어받기 head={p3_head_lr:.6f}, backbone={p3_backbone_lr:.7f}")
-            else:
-                p3_head_lr = phase3_head_lr
-                p3_backbone_lr = phase3_backbone_lr
-                print(f"[{epoch:03d}] Phase 3 시작: 고정 LR head={p3_head_lr:.6f}, backbone={p3_backbone_lr:.7f}")
-            optimizer = _make_phase3_optimizer(model, p3_head_lr, p3_backbone_lr)
+            optimizer = _make_phase3_optimizer(model, phase3_head_lr, phase3_backbone_lr)
             remaining = total_epochs - freeze_epochs - finetune_epochs
             scheduler = CosineAnnealingLR(optimizer, T_max=max(remaining, 1), eta_min=phase3_lr_min)
+            print(f"[{epoch:03d}] Phase 3 시작: backbone/neck lr={phase3_backbone_lr:.6f}, head lr={phase3_head_lr:.6f}")
 
         model.train()
         set_frozen_bn_eval(model)  # frozen BN이 batch 통계 쓰는 버그 방지
