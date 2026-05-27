@@ -40,6 +40,10 @@ train:
   phase3_backbone_lr: 0.00001     # backbone/neck lr (1e-5, head의 1/10 — pretrained 특징 보존)
   phase3_lr_min: 0.000001         # cosine 최솟값 (1e-6, 모든 param group 공통)
 
+split:
+  method: iterative        # random / iterative
+  output_dir: data/splits
+
 paths:
   checkpoint: outputs/checkpoints/
   prediction: outputs/predictions/

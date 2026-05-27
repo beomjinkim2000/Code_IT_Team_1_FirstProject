@@ -20,6 +20,7 @@ dependencies = [
     "kagglehub>=1.0.1",
 
     "kaggle>=2.1.2",
+    "iterative-stratification>=0.1.9",
 
 ]
 
