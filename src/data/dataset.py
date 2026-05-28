@@ -188,16 +188,22 @@ class PillDataset(Dataset):
         # annotation 없는 이미지에 모델 예측 추가
         for addition in corrections.get("missing_annotation_additions", []):
             fname = addition["image_file_name"]
-            if fname in annotations_by_file:
-                continue
             preds = addition.get("model_predictions", [])
             if not preds:
                 continue
-            annotations_by_file[fname] = {
-                "image_id": abs(hash(fname)) % (10 ** 8),
-                "boxes_xywh": [p["bbox_xywh"] for p in preds],
-                "labels": [int(p["category_id"]) for p in preds],
-            }
+            if fname not in annotations_by_file:
+                # 케이스 1: annotation 자체가 없는 이미지 → 새로 생성
+                annotations_by_file[fname] = {
+                    "image_id": abs(hash(fname)) % (10 ** 8),
+                    "boxes_xywh": [p["bbox_xywh"] for p in preds],
+                    "labels": [int(p["category_id"]) for p in preds],
+                }
+            else:
+                # 케이스 2: 일부 class annotation 누락 → 기존 항목에 추가
+                item = annotations_by_file[fname]
+                for pred in preds:
+                    item["boxes_xywh"].append(pred["bbox_xywh"])
+                    item["labels"].append(int(pred["category_id"]))
 
         return annotations_by_file
 
