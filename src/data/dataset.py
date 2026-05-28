@@ -110,17 +110,44 @@ class PillDataset(Dataset):
         return image_tensor, target
 
     @classmethod
-    def load_annotations(cls, root: str | Path = RAW_DATA_ROOT) -> dict[str, dict[str, Any]]:
+    def load_annotations(
+        cls,
+        root: str | Path = RAW_DATA_ROOT,
+        corrections_path: str | Path | None = Path("configs/bbox_corrections.json"),
+    ) -> dict[str, dict[str, Any]]:
         annotation_dir = Path(root) / "train_annotations"
         if not annotation_dir.exists():
             raise FileNotFoundError(f"Annotation directory not found: {annotation_dir}")
+
+        # bbox_corrections.json 로드 (없으면 빈 dict → 보정 없이 기존 동작 유지)
+        corrections: dict[str, Any] = {}
+        if corrections_path is not None:
+            cp = Path(corrections_path)
+            if cp.exists():
+                with open(cp, "r", encoding="utf-8") as f:
+                    corrections = json.load(f)
+
+        # 오기입 보정 테이블: {file_name: {원본 bbox tuple → 보정 bbox list}}
+        coord_fixes: dict[str, dict[tuple, list]] = {}
+        if "bbox_x6567_fix" in corrections:
+            fix = corrections["bbox_x6567_fix"]
+            coord_fixes[fix["image_file_name"]] = {
+                tuple(fix["original_bbox"]): fix["corrected_bbox"]
+            }
+
+        # 중복 bbox 제거 대상: {file_name: (중복 bbox tuple, 대체 예측 목록)}
+        dup_fix_map: dict[str, tuple[tuple, list]] = {}
+        for fix in corrections.get("duplicate_bbox_fixes", []):
+            dup_fix_map[fix["image_file_name"]] = (
+                tuple(fix["duplicate_bbox_xywh"]),
+                fix.get("model_predictions", []),
+            )
 
         annotations_by_file: dict[str, dict[str, Any]] = {}
         for json_path in annotation_dir.rglob("*.json"):
             with open(json_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
-            # COCO-like JSON이 여러 image를 담는 경우도 대비해 image_id로 image 정보를 찾는다.
             images_by_id = {int(image["id"]): image for image in data.get("images", [])}
 
             for annotation in data.get("annotations", []):
@@ -128,24 +155,49 @@ class PillDataset(Dataset):
                 image_info = images_by_id[image_id]
                 file_name = image_info["file_name"]
 
-                # EDA에서 발견된 이상치(bbox_x=6567 오기입 등) 방어: 이미지 범위 밖 bbox 스킵
                 x, y, w, h = annotation["bbox"]
                 img_w = image_info.get("width", float("inf"))
                 img_h = image_info.get("height", float("inf"))
+
+                # 알려진 오기입 보정 (e.g. bbox_x=6567 → 656)
+                if file_name in coord_fixes:
+                    x, y, w, h = coord_fixes[file_name].get((x, y, w, h), (x, y, w, h))
+
                 if x < 0 or y < 0 or w <= 0 or h <= 0 or x + w > img_w or y + h > img_h:
                     continue
 
-                # 실제 데이터는 한 이미지의 여러 알약 annotation이 여러 JSON에 흩어져 있어 file_name 기준으로 합친다.
                 item = annotations_by_file.setdefault(
                     file_name,
-                    {
-                        "image_id": image_id,
-                        "boxes_xywh": [],
-                        "labels": [],
-                    },
+                    {"image_id": image_id, "boxes_xywh": [], "labels": []},
                 )
-                item["boxes_xywh"].append(annotation["bbox"])
+                item["boxes_xywh"].append([x, y, w, h])
                 item["labels"].append(int(annotation["category_id"]))
+
+        # 중복 bbox 제거 후 모델 예측으로 대체
+        for fname, (dup_bbox, replacements) in dup_fix_map.items():
+            if fname not in annotations_by_file:
+                continue
+            item = annotations_by_file[fname]
+            keep = [i for i, b in enumerate(item["boxes_xywh"]) if tuple(b) != dup_bbox]
+            item["boxes_xywh"] = [item["boxes_xywh"][i] for i in keep]
+            item["labels"] = [item["labels"][i] for i in keep]
+            for pred in replacements:
+                item["boxes_xywh"].append(pred["bbox_xywh"])
+                item["labels"].append(int(pred["category_id"]))
+
+        # annotation 없는 이미지에 모델 예측 추가
+        for addition in corrections.get("missing_annotation_additions", []):
+            fname = addition["image_file_name"]
+            if fname in annotations_by_file:
+                continue
+            preds = addition.get("model_predictions", [])
+            if not preds:
+                continue
+            annotations_by_file[fname] = {
+                "image_id": abs(hash(fname)) % (10 ** 8),
+                "boxes_xywh": [p["bbox_xywh"] for p in preds],
+                "labels": [int(p["category_id"]) for p in preds],
+            }
 
         return annotations_by_file
 
