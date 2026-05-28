@@ -104,6 +104,7 @@ def main():
     phase3_backbone_lr = cfg["train"].get("phase3_backbone_lr", 0.00001)
     phase3_lr_min = cfg["train"].get("phase3_lr_min", 0.000001)
     phase3_warmup_epochs = cfg["train"].get("phase3_warmup_epochs", 0)
+    phase3_bn_frozen_epochs = cfg["train"].get("phase3_bn_frozen_epochs", 0)
     total_epochs = cfg["train"]["epochs"]
     freeze_epochs = max(1, int(total_epochs * cfg["train"].get("freeze_ratio", 0.2)))
     finetune_epochs = max(1, int(total_epochs * cfg["train"].get("finetune_ratio", 0.4)))
@@ -210,6 +211,7 @@ def main():
     log_writer.writeheader()
 
     best_mAP = -1.0
+    phase3_start_epoch = None
     for epoch in range(1, total_epochs + 1):
 
         if epoch == freeze_epochs + 1:
@@ -232,11 +234,18 @@ def main():
             # Phase 3 진입 시 EMA를 현재 모델 상태로 리셋 — Phase 2 가중치가 끌어당기는 현상 방지
             if cfg["ema"]["enabled"]:
                 ema = ModelEMA(model).to(device)
-            warmup_info = f", warmup={phase3_warmup_epochs}ep" if phase3_warmup_epochs > 0 else ""
-            print(f"[{epoch:03d}] Phase 3 시작: backbone lr={phase3_backbone_lr:.6f}, head lr={phase3_head_lr:.6f}{warmup_info}")
+            phase3_start_epoch = epoch
+            warmup_info = f", lr_warmup={phase3_warmup_epochs}ep" if phase3_warmup_epochs > 0 else ""
+            bn_info = f", bn_frozen={phase3_bn_frozen_epochs}ep" if phase3_bn_frozen_epochs > 0 else ""
+            print(f"[{epoch:03d}] Phase 3 시작: backbone lr={phase3_backbone_lr:.6f}, head lr={phase3_head_lr:.6f}{warmup_info}{bn_info}")
 
         model.train()
         set_frozen_bn_eval(model)  # frozen BN이 batch 통계 쓰는 버그 방지
+        if phase3_start_epoch is not None and phase3_bn_frozen_epochs > 0:
+            if epoch - phase3_start_epoch < phase3_bn_frozen_epochs:
+                for m in model.modules():
+                    if isinstance(m, torch.nn.BatchNorm2d):
+                        m.eval()
         train_loss, box_loss, cls_loss, dfl_loss = train_one_epoch(model, train_loader, optimizer, criterion, device, ema=ema)
         scheduler.step()
 
