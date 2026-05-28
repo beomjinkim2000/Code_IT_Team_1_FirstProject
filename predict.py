@@ -20,6 +20,7 @@ def main():
     parser = argparse.ArgumentParser(description="경구약제 객체 탐지 예측 및 제출 파일 생성")
     parser.add_argument("--config", default="configs/default.yaml", help="config 파일 경로")
     parser.add_argument("--checkpoint", default=None, help="체크포인트 경로 (미지정 시 best_model.pt)")
+    parser.add_argument("--use-ema", action="store_true", help="EMA 가중치 사용 (ema_state 키)")
     args = parser.parse_args()
 
     cfg = load_config(args.config)
@@ -28,17 +29,16 @@ def main():
     print(f"device: {device}")
 
     checkpoint_dir = Path(cfg["paths"]["checkpoint"])
-    if args.checkpoint:
-        ckpt_path = args.checkpoint
-    elif cfg["ema"]["enabled"] and (checkpoint_dir / "best_model_ema.pt").exists():
-        ckpt_path = checkpoint_dir / "best_model_ema.pt"
-    else:
-        ckpt_path = checkpoint_dir / "best_model.pt"
+    ckpt_path = args.checkpoint if args.checkpoint else checkpoint_dir / "best_model.pt"
     print(f"체크포인트 로드: {ckpt_path}")
     checkpoint = torch.load(ckpt_path, map_location=device, weights_only=True)
 
+    use_ema = args.use_ema and "ema_state" in checkpoint
+    state_key = "ema_state" if use_ema else "model_state"
+    print(f"가중치: {'EMA' if use_ema else 'raw'}")
+
     model = build_model(cfg["data"]["nc"])
-    model.load_state_dict(checkpoint["model_state"])
+    model.load_state_dict(checkpoint[state_key])
     model.to(device)
     model.eval()
 
