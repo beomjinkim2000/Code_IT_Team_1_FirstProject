@@ -12,7 +12,7 @@ on:
       dry_run:
         description: 'Discord 알림 없이 로그만 출력 (테스트용)'
         required: false
-        default: 'true'
+        default: 'false'
         type: boolean
 
 jobs:
@@ -45,7 +45,15 @@ jobs:
           ACTION="$GH_ACTION"
           MERGED="$GH_MERGED"
 
-          if [ "$EVENT" = "pull_request" ] && [ "$ACTION" = "closed" ] && [ "$MERGED" = "true" ]; then
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            TITLE="📝 오늘의 협업노트를 작성해주세요!"
+            COLOR=3447003
+            DESC="매일 19시 협업노트 작성 리마인더입니다. 오늘 작업 내용을 기록해주세요."
+            EXTRA_NAME=""
+            EXTRA_VALUE=""
+            RAW_BODY=""
+
+          elif [ "$EVENT" = "pull_request" ] && [ "$ACTION" = "closed" ] && [ "$MERGED" = "true" ]; then
             TITLE="✅ PR이 머지됐습니다!"
             COLOR=3066993
             DESC="[${PR_TITLE}](${PR_URL})"
@@ -82,7 +90,7 @@ jobs:
             RAW_BODY="$COMMENT_BODY"
 
           elif [ "$EVENT" = "pull_request" ] && [ "$ACTION" = "synchronize" ]; then
-            TITLE="📌 PR에 새 커밋이 푸시됐습니다"
+            TITLE="📌 PR에 새 커밋이 푸쉬됐습니다"
             COLOR=10181046
             DESC="[${PR_TITLE}](${PR_URL})"
             EXTRA_NAME=""
