@@ -16,7 +16,7 @@ data:
 
 train:
   epochs: 100
-  batch_size: 16
+  batch_size: 8
   img_size: 640
   seed: 42
 
