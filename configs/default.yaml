@@ -6,7 +6,7 @@ _required:
   - data.class_mapping
 
 model:
-  name: yolov8n          # yolov8n / yolov8s / yolov8m / yolov8l
+  name: yolov8m          # yolov8n / yolov8s / yolov8m / yolov8l
   num_classes: null      # class_mapping에서 자동 설정
 
 data:
@@ -15,8 +15,8 @@ data:
   names: []              # class_mapping에서 자동 설정
 
 train:
-  epochs: 50
-  batch_size: 16
+  epochs: 100
+  batch_size: 8
   img_size: 640
   seed: 42
 
