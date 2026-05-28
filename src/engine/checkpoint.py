@@ -31,16 +31,6 @@ def save_checkpoint(        #모델과 옵티마이저의 상태를 저장하는
     if is_best:
         torch.save(checkpoint, checkpoint_dir / "best_model.pt")
 
-    if ema is not None:
-        ema_checkpoint = {
-            "epoch": epoch,
-            "model_state": ema.state_dict(),
-            "val_mAP": val_mAP,
-        }
-        torch.save(ema_checkpoint, checkpoint_dir / f"epoch_{epoch}_ema.pt")
-        if is_best:
-            torch.save(ema_checkpoint, checkpoint_dir / "best_model_ema.pt")
-
     return path
 
 
