@@ -15,15 +15,15 @@ data:
   names: []              # class_mapping에서 자동 설정
 
 train:
-  epochs: 200
+  epochs: 50
   batch_size: 16
   img_size: 640
   seed: 42
 
   # --- Phase 비율 ---
-  freeze_ratio: 0.2     # Phase 1 에폭 비율 (예: 200 × 0.2 = 40 에폭)
-  finetune_ratio: 0.4   # Phase 2 에폭 비율 (예: 200 × 0.4 = 80 에폭)
-                        # Phase 3 = 나머지 (1 - 0.2 - 0.4 = 0.4 → 80 에폭)
+  freeze_ratio: 0.2     # Phase 1 에폭 비율 (예: 50 × 0.2 = 10 에폭)
+  finetune_ratio: 0.4   # Phase 2 에폭 비율 (예: 50 × 0.4 = 20 에폭)
+                        # Phase 3 = 나머지 (1 - 0.2 - 0.4 = 0.4 → 20 에폭)
   unfreeze_mode: head   # Phase 2 학습 범위: "head"(Detect 전체) / "cv3_last"(cv3 마지막만 유지)
 
   # --- Phase 1: cv3 마지막 Conv2d만 학습 ---
@@ -38,7 +38,8 @@ train:
   phase3_head_lr: 0.0001          # Detect head lr
   phase3_backbone_lr: 0.00001     # backbone/neck lr (head의 1/10 — pretrained 특징 보존)
   phase3_lr_min: 0.000001         # cosine 최솟값 (1e-6, 모든 param group 공통)
-  phase3_warmup_epochs: 5         # Phase 3 백본 LR warmup 에폭 수 (0=비활성화)
+  phase3_warmup_epochs: 5         # Phase 3 LR warmup 에폭 수 (0=비활성화)
+  phase3_bn_frozen_epochs: 5      # Phase 3 진입 후 BN eval 유지 에폭 수 (0=비활성화)
 
 optimizer:
   type: adamw            # adamw | sgd
