@@ -16,12 +16,10 @@ dependencies = [
     "torchmetrics[detection]>=1.8.2",
     "torchvision>=0.27.0",
     "ultralytics>=8.4.51",
-
     "kagglehub>=1.0.1",
-
     "kaggle>=2.1.2",
     "iterative-stratification>=0.1.9",
-
+    "ensemble-boxes>=1.0.9",
 ]
 
 [dependency-groups]

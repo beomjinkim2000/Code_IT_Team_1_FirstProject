@@ -67,7 +67,6 @@ def main():
             if len(pred["boxes"]) > 0:
                 pred["boxes"][:, [0, 2]] *= scale_x
                 pred["boxes"][:, [1, 3]] *= scale_y
-
         all_predictions.extend(preds)
 
     # predictions.json 저장
@@ -82,6 +81,7 @@ def main():
                     "boxes": p["boxes"].tolist(),
                     "labels": p["labels"].tolist(),
                     "scores": p["scores"].tolist(),
+                    "class_probs": p["class_probs"].tolist(),
                 }
                 for p in all_predictions
             ],
