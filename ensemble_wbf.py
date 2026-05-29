@@ -32,6 +32,52 @@ def _load_preds(path: str) -> dict[int, dict]:
     return {item["image_id"]: item for item in items}
 
 
+def _box_iou(a: np.ndarray, b: np.ndarray) -> float:
+    """정규화 좌표 [x1, y1, x2, y2] 두 박스의 IoU."""
+    ix1, iy1 = max(a[0], b[0]), max(a[1], b[1])
+    ix2, iy2 = min(a[2], b[2]), min(a[3], b[3])
+    inter = max(0.0, ix2 - ix1) * max(0.0, iy2 - iy1)
+    area_a = (a[2] - a[0]) * (a[3] - a[1])
+    area_b = (b[2] - b[0]) * (b[3] - b[1])
+    union = area_a + area_b - inter
+    return inter / union if union > 0 else 0.0
+
+
+def _soft_vote_labels(
+    fused_boxes: np.ndarray,
+    boxes_list: list[np.ndarray],
+    class_probs_list: list[np.ndarray],
+    weights: list[float],
+    iou_thr: float,
+) -> np.ndarray:
+    """각 fused box에 대해 겹치는 원본 박스들의 class_probs를 가중 평균 후 argmax.
+
+    class_probs가 없는 모델(기존 predictions.json)은 건너뜀.
+    모든 모델에 class_probs가 없으면 None 반환 → WBF 기본 label 사용.
+    """
+    if all(cp is None for cp in class_probs_list):
+        return None
+
+    result = []
+    for fbox in fused_boxes:
+        weighted_sum = None
+        total_w = 0.0
+        for boxes, class_probs, w in zip(boxes_list, class_probs_list, weights):
+            if class_probs is None or len(boxes) == 0:
+                continue
+            for box, probs in zip(boxes, class_probs):
+                if _box_iou(fbox, box) >= iou_thr:
+                    if weighted_sum is None:
+                        weighted_sum = np.zeros(len(probs), dtype=np.float64)
+                    weighted_sum += w * np.array(probs, dtype=np.float64)
+                    total_w += w
+        if weighted_sum is not None and total_w > 0:
+            result.append(int(np.argmax(weighted_sum / total_w)))
+        else:
+            result.append(-1)  # fallback: WBF 기본값 사용
+    return np.array(result)
+
+
 def _build_image_size_map(test_image_dir: Path) -> dict[int, tuple[int, int]]:
     """image_id → (orig_w, orig_h) 맵을 테스트 이미지 파일에서 만든다."""
     size_map = {}
@@ -108,13 +154,15 @@ def main():
     for image_id in image_ids:
         orig_w, orig_h = size_map[image_id]
 
-        boxes_list, scores_list, labels_list = [], [], []
+        boxes_list, scores_list, labels_list, class_probs_list = [], [], [], []
         for pred_dict in all_pred_dicts:
             item = pred_dict.get(image_id, {"boxes": [], "scores": [], "labels": []})
             b, s, l = _to_wbf_input(item, orig_w, orig_h)
             boxes_list.append(b)
             scores_list.append(s)
             labels_list.append(l)
+            cp_raw = item.get("class_probs")
+            class_probs_list.append(np.array(cp_raw, dtype=np.float32) if cp_raw else None)
 
         boxes, scores, labels = weighted_boxes_fusion(
             boxes_list,
@@ -129,6 +177,14 @@ def main():
         boxes = boxes[: args.max_det]
         scores = scores[: args.max_det]
         labels = labels[: args.max_det]
+
+        # 클래스 소프트 보팅 — class_probs가 있는 모델이 하나라도 있으면 적용
+        if len(boxes) > 0:
+            voted = _soft_vote_labels(boxes, boxes_list, class_probs_list, weights, args.iou_thr)
+            if voted is not None:
+                for i, v in enumerate(voted[: args.max_det]):
+                    if v >= 0:
+                        labels[i] = float(v)
 
         # [0, 1] → 원본 픽셀 복원
         if len(boxes) > 0:

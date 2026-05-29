@@ -81,6 +81,7 @@ def main():
                     "boxes": p["boxes"].tolist(),
                     "labels": p["labels"].tolist(),
                     "scores": p["scores"].tolist(),
+                    "class_probs": p["class_probs"].tolist(),
                 }
                 for p in all_predictions
             ],

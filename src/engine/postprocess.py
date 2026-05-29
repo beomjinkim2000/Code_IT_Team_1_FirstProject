@@ -20,6 +20,7 @@ class Prediction(TypedDict):
   boxes: torch.Tensor
   scores: torch.Tensor
   labels: torch.Tensor
+  class_probs: torch.Tensor  # [N, nc] — 각 박스별 클래스 확률 분포 (소프트 보팅용)
   
 RawOutputs = torch.Tensor | tuple[torch.Tensor, ...] | list[torch.Tensor]
 
@@ -36,6 +37,7 @@ class PostprocessConfig:
 def make_empty_prediction(
     image_id: int,
     device: torch.device | str | None = None,
+    nc: int = 0,
 ) -> Prediction:
   """예측 결과가 없을떄 인터페이스 형식 유지 함수
   downstream 코드가 항상 boxes/labels/scores 키와 tensor shanpe을 기대
@@ -46,6 +48,7 @@ def make_empty_prediction(
     "boxes": torch.empty((0, 4), dtype=torch.float32, device=device),
     "labels": torch.empty((0,), dtype=torch.int64, device=device),
     "scores": torch.empty((0,), dtype=torch.float32, device=device),
+    "class_probs": torch.empty((0, max(nc, 1)), dtype=torch.float32, device=device),
   }
 
 def postprocess_prediction(
@@ -123,6 +126,37 @@ def _extract_raw_tensor(raw_outputs: RawOutputs) -> torch.Tensor:
 
   raise TypeError("raw_outputs는 Tensor 또는 Tensor를 첫 번째 값으로 가진 tuple/list여야 합니다.")
 
+def _extract_class_probs(
+    raw_output: torch.Tensor,
+    det: torch.Tensor,
+) -> torch.Tensor:
+  """NMS 통과한 각 박스의 클래스 확률 벡터를 raw output에서 추출한다.
+
+  raw_output[4:, :] 채널이 클래스 점수(로짓 또는 sigmoid 이전)이고,
+  각 NMS 박스는 특정 앵커에서 왔다. argmax가 일치하는 앵커 중 점수가
+  가장 높은 앵커를 해당 박스의 소스로 찾아 클래스 분포를 반환한다.
+
+  반환: [N, nc] float32 텐서 (소프트맥스 확률)
+  """
+  nc = raw_output.shape[0] - 4
+  class_scores = raw_output[4:, :]           # [nc, num_anchors]
+  class_probs_all = class_scores.softmax(dim=0)  # [nc, num_anchors]
+  top_cls_per_anchor = class_scores.argmax(dim=0)  # [num_anchors]
+
+  result = []
+  for d in det:
+    cls_id = int(d[5])
+    candidates = (top_cls_per_anchor == cls_id).nonzero(as_tuple=True)[0]
+    if len(candidates) == 0:
+      anchor_idx = class_scores[cls_id].argmax()
+    else:
+      best = class_scores[cls_id, candidates].argmax()
+      anchor_idx = candidates[best]
+    result.append(class_probs_all[:, anchor_idx])
+
+  return torch.stack(result).to(dtype=torch.float32)  # [N, nc]
+
+
 def _postprocess_single_raw_output(
     raw_output: torch.Tensor,
     image_id: int,
@@ -145,28 +179,33 @@ def _postprocess_single_raw_output(
   if raw_output.shape[0] <= 4:
     raise ValueError("raw_output에는 bbox 4개 값과 최소 1개 이상의 class score가 필요합니다.")
 
+  nc = raw_output.shape[0] - 4
+
   detections = non_max_suppression(
     prediction=raw_output.unsqueeze(0),
     conf_thres=config.conf_threshold,
     iou_thres=config.iou_threshold,
     agnostic=config.class_agnostic_nms,
     max_det=config.max_detections,
-    nc=raw_output.shape[0] - 4,
+    nc=nc,
   )
 
   det = detections[0]
 
   if det.numel() == 0:
-    return make_empty_prediction(image_id=image_id, device=raw_output.device)
+    return make_empty_prediction(image_id=image_id, device=raw_output.device, nc=nc)
+
   boxes = det[:, :4]
   scores = det[:, 4]
   labels = det[:, 5]
+  class_probs = _extract_class_probs(raw_output, det)
 
   return {
     "image_id": int(image_id),
     "boxes": boxes.to(dtype=torch.float32),
     "labels": labels.to(dtype=torch.int64),
     "scores": scores.to(dtype=torch.float32),
+    "class_probs": class_probs,
   }
 
 def postprocess_raw_outputs(
