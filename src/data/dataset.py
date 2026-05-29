@@ -181,9 +181,11 @@ class PillDataset(Dataset):
             keep = [i for i, b in enumerate(item["boxes_xywh"]) if tuple(b) != dup_bbox]
             item["boxes_xywh"] = [item["boxes_xywh"][i] for i in keep]
             item["labels"] = [item["labels"][i] for i in keep]
+            kept_labels = set(item["labels"])
             for pred in replacements:
-                item["boxes_xywh"].append(pred["bbox_xywh"])
-                item["labels"].append(int(pred["category_id"]))
+                if int(pred["category_id"]) not in kept_labels:
+                    item["boxes_xywh"].append(pred["bbox_xywh"])
+                    item["labels"].append(int(pred["category_id"]))
 
         # annotation 없는 이미지에 모델 예측 추가
         for addition in corrections.get("missing_annotation_additions", []):
