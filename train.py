@@ -14,15 +14,31 @@ from src.data.split import build_split_metadata, train_val_split
 from src.data.transforms import train_transform, val_transform
 from src.engine.checkpoint import save_checkpoint
 from src.engine.ema import ModelEMA
-from src.engine.evaluate import evaluate
+from src.engine.evaluate import compute_per_class_f1, evaluate
 from src.engine.postprocess import PostprocessConfig, postprocess_raw_outputs
 from src.engine.predict import predict_batch
-from src.engine.train import _prepare_loss_args, train_one_epoch
+from src.engine.train import _prepare_loss_args, _targets_to_yolo_batch, train_one_epoch
 from src.utils.class_weights import compute_sample_weights
 from src.models.baseline import build_model, freeze_except_cv3_last, set_frozen_bn_eval, unfreeze_head, unfreeze_all
 from src.utils.collate import collate_fn
 from src.utils.config import load_config
 from src.utils.seed import set_seed
+
+
+@torch.no_grad()
+def _compute_val_loss(model, val_loader, criterion, device):
+    total_box = total_cls = total_dfl = 0.0
+    n = 0
+    for images, targets in val_loader:
+        loss_batch = _targets_to_yolo_batch(targets, images, device)
+        imgs = torch.stack(images).to(device)
+        output = model(imgs)
+        loss_vec, _ = criterion(output, loss_batch)
+        total_box += loss_vec[0].item()
+        total_cls += loss_vec[1].item()
+        total_dfl += loss_vec[2].item()
+        n += len(images)
+    return total_box / n, total_cls / n, total_dfl / n
 
 
 def _collect_val_predictions(model, val_loader, device, postprocess_cfg):
@@ -91,7 +107,11 @@ def main():
     parser.add_argument(
         "--config", default="configs/default.yaml", help="config 파일 경로"
     )
+    parser.add_argument(
+        "--run-name", default="default", help="실험 버전 이름 (metrics_<run-name>.csv로 저장)"
+    )
     args = parser.parse_args()
+    run_name = args.run_name
 
     cfg = load_config(args.config)
     set_seed(cfg["train"]["seed"])
@@ -200,15 +220,22 @@ def main():
         max_detections=cfg["postprocess"]["max_detections"],
     )
 
+    nc = cfg["data"]["nc"]
     log_dir = Path("outputs/logs")
     log_dir.mkdir(parents=True, exist_ok=True)
-    log_path = log_dir / "metrics.csv"
+    log_path = log_dir / f"metrics_{run_name}.csv"
     log_file = log_path.open("w", newline="")
     log_writer = csv.DictWriter(log_file, fieldnames=[
         "epoch", "train_loss", "box_loss", "cls_loss", "dfl_loss",
+        "val_box_loss", "val_cls_loss", "val_dfl_loss",
         "val_mAP_raw", "val_mAP_50_raw", "val_mAP_ema", "val_mAP_50_ema", "lr",
     ])
     log_writer.writeheader()
+
+    f1_path = log_dir / f"f1_{run_name}.csv"
+    f1_file = f1_path.open("w", newline="")
+    f1_writer = csv.DictWriter(f1_file, fieldnames=["epoch", "class_id", "precision", "recall", "f1"])
+    f1_writer.writeheader()
 
     best_mAP = -1.0
     phase3_start_epoch = None
@@ -251,10 +278,20 @@ def main():
 
         # 원본 모델 검증
         model.eval()
+        val_box_loss, val_cls_loss, val_dfl_loss = _compute_val_loss(model, val_loader, criterion, device)
         raw_preds, raw_targets = _collect_val_predictions(model, val_loader, device, eval_postprocess_cfg)
         raw_result = evaluate(raw_preds, raw_targets)
         val_mAP_raw = raw_result["mAP"]
         val_mAP_50_raw = raw_result["mAP_50"]
+
+        per_class_f1 = compute_per_class_f1(
+            raw_preds, raw_targets,
+            num_classes=nc,
+            conf_threshold=postprocess_cfg.conf_threshold,
+        )
+        for cls_id, stats in per_class_f1.items():
+            f1_writer.writerow({"epoch": epoch, "class_id": cls_id, **stats})
+        f1_file.flush()
 
         # EMA 모델 검증 (EMA 비활성화 시 원본 결과 그대로 사용)
         if ema is not None:
@@ -285,6 +322,7 @@ def main():
         log_writer.writerow({
             "epoch": epoch, "train_loss": round(train_loss, 6),
             "box_loss": round(box_loss, 6), "cls_loss": round(cls_loss, 6), "dfl_loss": round(dfl_loss, 6),
+            "val_box_loss": round(val_box_loss, 6), "val_cls_loss": round(val_cls_loss, 6), "val_dfl_loss": round(val_dfl_loss, 6),
             "val_mAP_raw": round(val_mAP_raw, 6), "val_mAP_50_raw": round(val_mAP_50_raw, 6),
             "val_mAP_ema": round(val_mAP_ema, 6), "val_mAP_50_ema": round(val_mAP_50_ema, 6),
             "lr": round(current_lr, 8),
@@ -296,6 +334,7 @@ def main():
         )
 
     log_file.close()
+    f1_file.close()
     print(f"학습 완료. best_mAP(ema): {best_mAP:.4f}")
 
 
