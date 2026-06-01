@@ -13,6 +13,7 @@ def save_checkpoint(        #모델과 옵티마이저의 상태를 저장하는
     checkpoint_dir: str | Path = "outputs/checkpoints",     #체크포인트를 저장할 디렉토리 경로, 기본값은 "outputs/checkpoints"
     is_best: bool = False,      #현재 모델이 지금까지 저장된 모델 중 가장 좋은 모델인지 여부, 기본값은 False
     ema=None,               #저장할 EMA 객체
+    save_epoch_file: bool = True,  #epoch_N.pt 저장 여부 (False면 best_model.pt만 저장)
 ) -> Path:
     checkpoint_dir = Path(checkpoint_dir)       #checkpoint_dir 경로를 Path 객체로 변환
     checkpoint_dir.mkdir(parents=True, exist_ok=True)       #checkpoint_dir이 존재하지 않으면 디렉토리를 생성, parents=True는 상위 디렉토리도 함께 생성, exist_ok=True는 이미 디렉토리가 존재해도 에러 없이 넘어가도록 함
@@ -26,7 +27,8 @@ def save_checkpoint(        #모델과 옵티마이저의 상태를 저장하는
     }
 
     path = checkpoint_dir / f"epoch_{epoch}.pt"
-    torch.save(checkpoint, path)
+    if save_epoch_file:
+        torch.save(checkpoint, path)
 
     if is_best:
         torch.save(checkpoint, checkpoint_dir / "best_model.pt")

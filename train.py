@@ -110,8 +110,13 @@ def main():
     parser.add_argument(
         "--run-name", default="default", help="실험 버전 이름 (metrics_<run-name>.csv로 저장)"
     )
+    parser.add_argument(
+        "--save-all-epochs", action="store_true",
+        help="매 에폭마다 epoch_N.pt 저장 (기본: best_model.pt만 저장)"
+    )
     args = parser.parse_args()
     run_name = args.run_name
+    save_all_epochs = args.save_all_epochs
 
     cfg = load_config(args.config)
     set_seed(cfg["train"]["seed"])
@@ -317,6 +322,7 @@ def main():
             checkpoint_dir=cfg["paths"]["checkpoint"],
             is_best=is_best,
             ema=ema,
+            save_epoch_file=save_all_epochs,
         )
 
         current_lr = scheduler.get_last_lr()[-1]
