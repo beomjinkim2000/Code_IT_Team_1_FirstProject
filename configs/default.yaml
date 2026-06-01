@@ -21,9 +21,9 @@ train:
   seed: 42
 
   # --- Phase 비율 ---
-  freeze_ratio: 0.2     # Phase 1 에폭 비율 (예: 50 × 0.2 = 10 에폭)
-  finetune_ratio: 0.4   # Phase 2 에폭 비율 (예: 50 × 0.4 = 20 에폭)
-                        # Phase 3 = 나머지 (1 - 0.2 - 0.4 = 0.4 → 20 에폭)
+  freeze_ratio: 0.2     # Phase 1 에폭 비율 (예: 250 × 0.2 = 50 에폭)
+  finetune_ratio: 0.4   # Phase 2 에폭 비율 (예: 250 × 0.4 = 100 에폭)
+                        # Phase 3 = 나머지 (1 - 0.2 - 0.4 = 0.4 → 100 에폭)
   unfreeze_mode: head   # Phase 2 학습 범위: "head"(Detect 전체) / "cv3_last"(cv3 마지막만 유지)
 
   # --- Phase 1: cv3 마지막 Conv2d만 학습 ---
