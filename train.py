@@ -220,6 +220,7 @@ def main():
         max_detections=cfg["postprocess"]["max_detections"],
     )
 
+    run_name = args.run_name or "default"
     nc = cfg["data"]["nc"]
     log_dir = Path("outputs/logs")
     log_dir.mkdir(parents=True, exist_ok=True)
