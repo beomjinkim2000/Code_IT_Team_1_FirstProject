@@ -6,7 +6,7 @@ _required:
   - data.class_mapping
 
 model:
-  name: yolov8l          # yolov8n / yolov8s / yolov8m / yolov8l
+  name: yolov8x          # yolov8n / yolov8s / yolov8m / yolov8l
   num_classes: null      # class_mapping에서 자동 설정
 
 data:
@@ -15,7 +15,7 @@ data:
   names: []              # class_mapping에서 자동 설정
 
 train:
-  epochs: 100
+  epochs: 150
   batch_size: 8
   img_size: 640
   seed: 42
@@ -35,8 +35,8 @@ train:
   phase2_lr_min: 0.00001
 
   # --- Phase 3: backbone/neck + head 전체 fine-tune ---
-  phase3_head_lr: 0.0001          # Detect head lr
-  phase3_backbone_lr: 0.00001     # backbone/neck lr (head의 1/10 — pretrained 특징 보존)
+  phase3_head_lr: 0.00001          # Detect head lr
+  phase3_backbone_lr: 0.000001     # backbone/neck lr (head의 1/10 — pretrained 특징 보존)
   phase3_lr_min: 0.000001         # cosine 최솟값 (1e-6, 모든 param group 공통)
   phase3_warmup_epochs: 5         # Phase 3 LR warmup 에폭 수 (0=비활성화)
   phase3_bn_frozen_epochs: 5      # Phase 3 진입 후 BN eval 유지 에폭 수 (0=비활성화)
@@ -45,7 +45,7 @@ optimizer:
   type: adamw            # adamw | sgd
   # SGD 전용 파라미터 (type=sgd일 때만 사용)
   momentum: 0.937
-  weight_decay: 0.0005
+  weight_decay: 0.0001
   nesterov: true
 
 ema:
