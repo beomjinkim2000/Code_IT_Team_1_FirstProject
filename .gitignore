@@ -27,6 +27,9 @@ __pycache__/
 .claude/
 CLAUDE.md
 
+# WandB 로컬 실험 캐시 (실험 데이터는 WandB 클라우드에 저장됨)
+wandb/
+
 # 로컬 문서 (개인 보고서/메모) — docs/ 전체 로컬 전용, git push 없음
 docs/
 wandb/

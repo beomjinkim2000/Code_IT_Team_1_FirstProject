@@ -10,8 +10,10 @@ from torch.utils.data import DataLoader, WeightedRandomSampler
 from tqdm import tqdm
 from ultralytics.utils.loss import v8DetectionLoss
 
+from torch.utils.data import ConcatDataset
 from src.data.dataset import PillDataset, RAW_DATA_ROOT
 from src.data.mosaic import MosaicDataset
+from src.data.synth_dataset import SynthPillDataset
 from src.data.split import build_split_metadata, train_val_split
 from src.data.transforms import train_transform, val_transform
 from src.engine.checkpoint import save_checkpoint
@@ -114,6 +116,8 @@ def main():
     )
     parser.add_argument(
         "--version", default=None, help="WandB artifact 버전 태그 (예: v1.0). 지정 시 best.pt 업로드"
+        "--synth_data", default=None, metavar="DIR",
+        help="합성 데이터 경로 (예: data/augmented/synth). 없으면 WandB artifact에서 자동 다운로드",
     )
     args = parser.parse_args()
     cfg = load_config(args.config)
@@ -194,6 +198,15 @@ def main():
         min_bbox_size=aug_cfg.get("mosaic_min_bbox_size", 2),
     )
 
+    if args.synth_data:
+        synth_ds = SynthPillDataset(
+            synth_root=args.synth_data,
+            transforms=train_transform(img_size, cfg.get("augmentation")),
+            category_to_label=category_to_label,
+        )
+        train_ds = ConcatDataset([train_ds, synth_ds])
+        print(f"합성 데이터 추가: {len(synth_ds)}장 → 총 {len(train_ds)}장")
+
     val_ds = PillDataset(
         split="val",
         annotations=annotations,
@@ -204,7 +217,8 @@ def main():
 
     cw_cfg = cfg.get("class_weights") or {}
     cw_method = cw_cfg.get("method")
-    if cw_method:
+    # ConcatDataset(synth 포함)은 .dataset.image_paths 구조가 없어 WeightedRandomSampler 불가
+    if cw_method and not args.synth_data:
         sample_weights = compute_sample_weights(
             image_paths=train_ds.dataset.image_paths,
             annotations=annotations,
@@ -217,6 +231,8 @@ def main():
         train_loader = DataLoader(train_ds, batch_size=cfg["train"]["batch_size"], sampler=sampler, collate_fn=collate_fn)
         print(f"class_weights: method={cw_method}, sample_weights min={min(sample_weights):.3f} max={max(sample_weights):.3f}")
     else:
+        if cw_method and args.synth_data:
+            print("class_weights: synth_data 사용 시 WeightedRandomSampler 비활성화 (shuffle 사용)")
         train_loader = DataLoader(train_ds, batch_size=cfg["train"]["batch_size"], shuffle=True, collate_fn=collate_fn)
 
     val_loader = DataLoader(
