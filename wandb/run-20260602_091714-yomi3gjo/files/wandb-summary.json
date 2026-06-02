@@ -1,1 +1,0 @@
-{"_timestamp":1.780359435821921e+09,"_step":0,"_wandb":{"runtime":0},"_runtime":0,"val/mAP":0.967262,"val/mAP50":0.998497,"val/mAP_ema":0.966096,"val/mAP50_ema":0.998497}
