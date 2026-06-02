@@ -1,0 +1,1 @@
+{"best_mAP_ema":0.924962,"train/box_loss":0.433957,"val/mAP_ema":0.924762,"val/mAP50_ema":0.979181,"train/cls_loss":0.608396,"val/mAP50_raw":0.979181,"_wandb":{"runtime":0},"_runtime":0.089888875,"train/dfl_loss":0.946436,"val/mAP_raw":0.924632,"_step":200,"lr":1e-06,"kaggle_score":0.723,"_timestamp":1.78036469775342e+09,"train/loss":1.98879}

@@ -1,0 +1,13 @@
+2026-06-02 09:09:59,743 INFO    MainThread:17027 [wandb_setup.py:_flush():81] Current SDK version is 0.27.0
+2026-06-02 09:09:59,743 INFO    MainThread:17027 [wandb_setup.py:_flush():81] Configure stats pid to 17027
+2026-06-02 09:09:59,743 INFO    MainThread:17027 [wandb_setup.py:_flush():81] Loading settings from environment variables
+2026-06-02 09:09:59,743 INFO    MainThread:17027 [wandb_init.py:setup_run_log_directory():723] Logging user logs to /Users/apple/Documents/GitHub/Code_IT_Team_1_FirstProject/wandb/run-20260602_090959-1cr5zan0/logs/debug.log
+2026-06-02 09:09:59,743 INFO    MainThread:17027 [wandb_init.py:setup_run_log_directory():724] Logging internal logs to /Users/apple/Documents/GitHub/Code_IT_Team_1_FirstProject/wandb/run-20260602_090959-1cr5zan0/logs/debug-internal.log
+2026-06-02 09:09:59,743 INFO    MainThread:17027 [wandb_init.py:init():851] calling init triggers
+2026-06-02 09:09:59,743 INFO    MainThread:17027 [wandb_init.py:init():856] wandb.init called with sweep_config: {}
+config: {'model': 'YOLOv8n', 'epochs': 50, 'date': '2026-05-19', 'mosaic': True, '_wandb': {}}
+2026-06-02 09:09:59,743 INFO    MainThread:17027 [wandb_init.py:init():899] starting backend
+2026-06-02 09:09:59,999 INFO    MainThread:17027 [wandb_init.py:init():914] sending inform_init request
+2026-06-02 09:10:00,504 INFO    MainThread:17027 [wandb_init.py:init():919] backend started and connected
+2026-06-02 09:10:00,520 INFO    MainThread:17027 [wandb_init.py:init():989] updated telemetry
+2026-06-02 09:10:00,547 INFO    MainThread:17027 [wandb_init.py:init():1012] communicating run to backend with 90.0 second timeout

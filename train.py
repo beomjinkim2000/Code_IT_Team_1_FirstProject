@@ -114,7 +114,26 @@ def main():
     run_name = args.run_name
 
     cfg = load_config(args.config)
-    set_seed(cfg["train"]["seed"])
+    init_seeds(cfg["train"]["seed"], deterministic=True)
+
+    wandb.init(
+        entity="health-eat-pill-detection",
+        project="health-eat-pill-detection",
+        config=cfg,
+        resume="allow",
+        tags=[cfg["model"]["name"]],
+        mode="disabled" if not os.environ.get("WANDB_API_KEY") else "online",
+    )
+
+    # sweep이 넘겨준 값으로 cfg 덮어쓰기 (일반 학습 시엔 wandb.config = cfg 그대로)
+    wcfg = wandb.config
+    for dotkey, val in wcfg.items():
+        keys = dotkey.split(".")
+        node = cfg
+        for k in keys[:-1]:
+            node = node.setdefault(k, {})
+        node[keys[-1]] = val
+
     img_size = cfg["train"]["img_size"]
     phase1_lr = cfg["train"].get("phase1_lr", 0.001)
     phase1_lr_min = cfg["train"].get("phase1_lr_min", 0.00001)
@@ -318,6 +337,18 @@ def main():
             is_best=is_best,
             ema=ema,
         )
+
+
+        if is_best and args.version and os.environ.get("WANDB_API_KEY"):
+            artifact_name = f"best-{args.version}"
+            artifact = wandb.Artifact(
+                name=artifact_name,
+                type="model",
+                metadata={"epoch": epoch, "val_mAP_ema": val_mAP_ema, "version": args.version},
+            )
+            best_pt = Path(cfg["paths"]["checkpoint"]) / "best.pt"
+            artifact.add_file(str(best_pt), name=f"best-{args.version}.pt")
+            wandb.log_artifact(artifact)
 
         current_lr = scheduler.get_last_lr()[-1]
         log_writer.writerow({

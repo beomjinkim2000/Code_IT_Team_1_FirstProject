@@ -1,0 +1,46 @@
+_wandb:
+    value:
+        cli_version: 0.27.0
+        e:
+            pnli6ddw8sz8n1c72f2h6eh0brbogtec:
+                codePath: scripts/upload_experiment_log.py
+                codePathLocal: scripts/upload_experiment_log.py
+                email: beomjinkim2000@gmail.com
+                executable: /Users/apple/Documents/GitHub/Code_IT_Team_1_FirstProject/.venv/bin/python3
+                git:
+                    commit: 09900ed3666df2305c86a19ac3c82140a6455bd2
+                    remote: https://github.com/beomjinkim2000/Code_IT_Team_1_FirstProject.git
+                host: appleui-MacBookAir.local
+                os: macOS-15.6-arm64-arm-64bit-Mach-O
+                program: /Users/apple/Documents/GitHub/Code_IT_Team_1_FirstProject/scripts/upload_experiment_log.py
+                python: CPython 3.14.0
+                root: /Users/apple/Documents/GitHub/Code_IT_Team_1_FirstProject
+                startedAt: "2026-06-02T00:16:54.306924Z"
+                writerId: pnli6ddw8sz8n1c72f2h6eh0brbogtec
+        m: []
+        python_version: 3.14.0
+        t:
+            "3":
+                - 2
+                - 13
+                - 15
+                - 16
+                - 62
+            "4": 3.14.0
+            "5": 0.27.0
+            "8":
+                - 2
+            "12": 0.27.0
+            "13": darwin-arm64
+date:
+    value: "2026-05-26"
+epochs:
+    value: 50
+model:
+    value: YOLOv8n
+mosaic:
+    value: false
+optimizer:
+    value: AdamW
+phases:
+    value: 3
