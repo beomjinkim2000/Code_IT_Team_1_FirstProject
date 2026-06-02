@@ -1,0 +1,21 @@
+2026-06-02 10:07:06,382 INFO    MainThread:84132 [wandb_init.py:setup_run_log_directory():723] Logging user logs to /Users/apple/Documents/GitHub/Code_IT_Team_1_FirstProject/wandb/run-20260602_100706-swtqq2ym/logs/debug.log
+2026-06-02 10:07:06,382 INFO    MainThread:84132 [wandb_init.py:setup_run_log_directory():724] Logging internal logs to /Users/apple/Documents/GitHub/Code_IT_Team_1_FirstProject/wandb/run-20260602_100706-swtqq2ym/logs/debug-internal.log
+2026-06-02 10:07:06,382 INFO    MainThread:84132 [wandb_init.py:init():851] calling init triggers
+2026-06-02 10:07:06,382 INFO    MainThread:84132 [wandb_init.py:init():856] wandb.init called with sweep_config: {}
+config: {'model': 'yolov8x', 'epochs': 200, 'batch_size': 8, 'source': 'gdrive-historical', '_wandb': {}}
+2026-06-02 10:07:06,382 INFO    MainThread:84132 [wandb_init.py:init():899] starting backend
+2026-06-02 10:07:06,382 INFO    MainThread:84132 [wandb_init.py:init():914] sending inform_init request
+2026-06-02 10:07:06,875 INFO    MainThread:84132 [wandb_init.py:init():919] backend started and connected
+2026-06-02 10:07:06,902 INFO    MainThread:84132 [wandb_init.py:init():989] updated telemetry
+2026-06-02 10:07:06,934 INFO    MainThread:84132 [wandb_init.py:init():1012] communicating run to backend with 90.0 second timeout
+2026-06-02 10:07:07,363 INFO    MainThread:84132 [wandb_init.py:init():1057] starting run threads in backend
+2026-06-02 10:07:07,433 INFO    MainThread:84132 [wandb_run.py:_console_start():2509] atexit reg
+2026-06-02 10:07:07,433 INFO    MainThread:84132 [wandb_run.py:_redirect():2359] redirect: wrap_raw
+2026-06-02 10:07:07,433 INFO    MainThread:84132 [wandb_run.py:_redirect():2428] Wrapping output streams.
+2026-06-02 10:07:07,433 INFO    MainThread:84132 [wandb_run.py:_redirect():2451] Redirects installed.
+2026-06-02 10:07:07,434 INFO    MainThread:84132 [wandb_init.py:init():1095] run started, returning control to user process
+2026-06-02 10:07:07,459 INFO    MainThread:84132 [wandb_run.py:_finish():2271] finishing run beomjin-team/health-eat-pill-detection/swtqq2ym
+2026-06-02 10:07:07,459 INFO    MainThread:84132 [wandb_run.py:_atexit_cleanup():2476] got exitcode: 0
+2026-06-02 10:07:07,459 INFO    MainThread:84132 [wandb_run.py:_restore():2458] restore
+2026-06-02 10:07:07,459 INFO    MainThread:84132 [wandb_run.py:_restore():2464] restore done
+2026-06-02 10:07:08,986 INFO    MainThread:84132 [wandb_run.py:_footer_sync_info():3877] logging synced files
