@@ -1,1 +1,0 @@
-{"lr":8.59e-06,"val/mAP50_raw":0.992574,"val/mAP_raw":0.951779,"train/box_loss":0.43041,"_wandb":{"runtime":0},"best_mAP_ema":0.96295,"train/loss":1.962037,"val/mAP50_ema":0.994077,"_timestamp":1.780362433806873e+09,"train/dfl_loss":0.989013,"val/mAP_ema":0.947304,"_step":250,"train/cls_loss":0.542614,"_runtime":0.449232209}
