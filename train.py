@@ -6,11 +6,9 @@ from pathlib import Path
 import torch
 import wandb
 from torch.optim.lr_scheduler import CosineAnnealingLR, LinearLR, SequentialLR
-from torch.utils.data import DataLoader, WeightedRandomSampler
+from torch.utils.data import ConcatDataset, DataLoader, WeightedRandomSampler
 from tqdm import tqdm
 from ultralytics.utils.loss import v8DetectionLoss
-
-from torch.utils.data import ConcatDataset
 from src.data.dataset import PillDataset, RAW_DATA_ROOT
 from src.data.mosaic import MosaicDataset
 from src.data.synth_dataset import SynthPillDataset
@@ -116,12 +114,14 @@ def main():
     )
     parser.add_argument(
         "--version", default=None, help="WandB artifact 버전 태그 (예: v1.0). 지정 시 best.pt 업로드"
+    )
+    parser.add_argument(
         "--synth_data", default=None, metavar="DIR",
         help="합성 데이터 경로 (예: data/augmented/synth). 없으면 WandB artifact에서 자동 다운로드",
     )
     args = parser.parse_args()
     cfg = load_config(args.config)
-    set_seed(cfg["train"]["seed"], deterministic=True)
+    set_seed(cfg["train"]["seed"])
 
     wandb.init(
         entity="health-eat-pill-detection",
