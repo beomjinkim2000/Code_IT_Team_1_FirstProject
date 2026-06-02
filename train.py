@@ -1,8 +1,10 @@
 ﻿import argparse
 import csv
+import os
 from pathlib import Path
 
 import torch
+import wandb
 from torch.optim.lr_scheduler import CosineAnnealingLR, LinearLR, SequentialLR
 from torch.utils.data import DataLoader, WeightedRandomSampler
 from tqdm import tqdm
@@ -113,14 +115,13 @@ def main():
         "--run-name", default="default", help="실험 버전 이름 (metrics_<run-name>.csv로 저장)"
     )
     parser.add_argument(
+        "--version", default=None, help="WandB artifact 버전 태그 (예: v1.0). 지정 시 best.pt 업로드"
         "--synth_data", default=None, metavar="DIR",
         help="합성 데이터 경로 (예: data/augmented/synth). 없으면 WandB artifact에서 자동 다운로드",
     )
     args = parser.parse_args()
-    run_name = args.run_name
-
     cfg = load_config(args.config)
-    init_seeds(cfg["train"]["seed"], deterministic=True)
+    set_seed(cfg["train"]["seed"], deterministic=True)
 
     wandb.init(
         entity="health-eat-pill-detection",
@@ -331,6 +332,18 @@ def main():
             f1_writer.writerow({"epoch": epoch, "class_id": cls_id, **stats})
         f1_file.flush()
 
+        # threshold sweep: val set 재순회 비용이 있어 5에폭 간격으로만 실행
+        _SWEEP_THRESHOLDS = [0.1, 0.15, 0.2, 0.25, postprocess_cfg.conf_threshold, 0.3, 0.35, 0.4, 0.5]
+        best_thr, best_mean_f1 = postprocess_cfg.conf_threshold, -1.0
+        sweep_log: dict = {}
+        if epoch % 5 == 0 or epoch == total_epochs:
+            for thr in _SWEEP_THRESHOLDS:
+                _f1 = compute_per_class_f1(raw_preds, raw_targets, num_classes=nc, conf_threshold=thr)
+                mean_f1 = sum(v["f1"] for v in _f1.values()) / max(len(_f1), 1)
+                sweep_log[f"f1_sweep/thr_{thr:.2f}"] = round(mean_f1, 4)
+                if mean_f1 > best_mean_f1:
+                    best_mean_f1, best_thr = mean_f1, thr
+
         # EMA 모델 검증 (EMA 비활성화 시 원본 결과 그대로 사용)
         if ema is not None:
             ema.model.eval()
@@ -369,6 +382,36 @@ def main():
             wandb.log_artifact(artifact)
 
         current_lr = scheduler.get_last_lr()[-1]
+        train_total_loss = box_loss + cls_loss + dfl_loss
+        val_total_loss = val_box_loss + val_cls_loss + val_dfl_loss
+        overfit_gap = val_total_loss - train_total_loss
+
+        f1_log = {
+            f"{metric}/class_{c}": s[metric]
+            for c, s in per_class_f1.items()
+            for metric in ("f1", "precision", "recall")
+        }
+        wandb.log({
+            "epoch": epoch,
+            "train/loss": train_loss,
+            "train/box_loss": box_loss,
+            "train/cls_loss": cls_loss,
+            "train/dfl_loss": dfl_loss,
+            "val/box_loss": val_box_loss,
+            "val/cls_loss": val_cls_loss,
+            "val/dfl_loss": val_dfl_loss,
+            "val/mAP_raw": val_mAP_raw,
+            "val/mAP_50_raw": val_mAP_50_raw,
+            "val/mAP_ema": val_mAP_ema,
+            "val/mAP_50_ema": val_mAP_50_ema,
+            "lr": current_lr,
+            "overfit/loss_gap": overfit_gap,
+            "f1/best_threshold": best_thr,
+            "f1/best_mean_f1": best_mean_f1,
+            **f1_log,
+            **sweep_log,
+        })
+
         log_writer.writerow({
             "epoch": epoch, "train_loss": round(train_loss, 6),
             "box_loss": round(box_loss, 6), "cls_loss": round(cls_loss, 6), "dfl_loss": round(dfl_loss, 6),
@@ -385,6 +428,7 @@ def main():
 
     log_file.close()
     f1_file.close()
+    wandb.finish()
     print(f"학습 완료. best_mAP(ema): {best_mAP:.4f}")
 
 

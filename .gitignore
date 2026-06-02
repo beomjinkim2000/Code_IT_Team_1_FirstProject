@@ -32,3 +32,4 @@ wandb/
 
 # 로컬 문서 (개인 보고서/메모) — docs/ 전체 로컬 전용, git push 없음
 docs/
+wandb/
