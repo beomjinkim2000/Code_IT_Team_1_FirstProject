@@ -380,6 +380,7 @@ def main():
             checkpoint_dir=cfg["paths"]["checkpoint"],
             is_best=is_best,
             ema=ema,
+            version=args.version,
         )
 
 
