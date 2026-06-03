@@ -128,11 +128,18 @@ def main():
 
     run_name = args.run_name or "default"
 
+    # WandB에 넘길 config에서 int 키 dict(직렬화 불가) 및 derived 필드 제거
+    import copy
+    _wandb_cfg = copy.deepcopy(cfg)
+    _wandb_cfg.get("data", {}).pop("category_to_label", None)
+    _wandb_cfg.get("data", {}).pop("label_to_category", None)
+    _wandb_cfg.pop("_required", None)
+
     wandb.init(
         entity=os.environ.get("WANDB_ENTITY", "health-eat-pill-detection"),
         project=os.environ.get("WANDB_PROJECT", "health-eat-pill-detection"),
         name=run_name,
-        config=cfg,
+        config=_wandb_cfg,
         notes=args.notes,
         resume="allow",
         tags=[cfg["model"]["name"]],
@@ -142,12 +149,8 @@ def main():
     wandb.define_metric("*", step_metric="epoch")
 
     # sweep이 넘겨준 값으로 cfg 덮어쓰기 (일반 학습 시엔 wandb.config = cfg 그대로)
-    # WandB는 int 키 dict을 string 키로 직렬화하므로 derived 필드는 덮어쓰지 않는다
-    _WCFG_SKIP = {"data.category_to_label", "data.label_to_category", "data.names", "data.nc", "model.num_classes", "_required"}
     wcfg = wandb.config
     for dotkey, val in wcfg.items():
-        if dotkey in _WCFG_SKIP:
-            continue
         keys = dotkey.split(".")
         node = cfg
         for k in keys[:-1]:
