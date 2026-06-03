@@ -126,6 +126,8 @@ def main():
     cfg = load_config(args.config)
     set_seed(cfg["train"]["seed"])
 
+    run_name = args.run_name or "default"
+
     wandb.init(
         entity=os.environ.get("WANDB_ENTITY", "health-eat-pill-detection"),
         project=os.environ.get("WANDB_PROJECT", "health-eat-pill-detection"),
@@ -265,7 +267,6 @@ def main():
         max_detections=cfg["postprocess"]["max_detections"],
     )
 
-    run_name = args.run_name or "default"
     nc = cfg["data"]["nc"]
     log_dir = Path("outputs/logs")
     log_dir.mkdir(parents=True, exist_ok=True)
