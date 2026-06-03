@@ -280,6 +280,8 @@ def main():
     f1_writer.writeheader()
 
     best_mAP = -1.0
+    early_stop_patience = cfg["train"].get("early_stop_patience", 0)
+    epochs_no_improve = 0
     phase3_start_epoch = None
     for epoch in range(1, total_epochs + 1):
 
@@ -361,6 +363,9 @@ def main():
         is_best = val_mAP_ema > best_mAP
         if is_best:
             best_mAP = val_mAP_ema
+            epochs_no_improve = 0
+        else:
+            epochs_no_improve += 1
 
         save_checkpoint(
             model,
@@ -428,6 +433,10 @@ def main():
             f"[{epoch:03d}/{total_epochs:03d}] loss: {train_loss:.4f}  box: {box_loss:.4f}  cls: {cls_loss:.4f}  dfl: {dfl_loss:.4f}"
             f"  mAP(raw): {val_mAP_raw:.4f}  mAP(ema): {val_mAP_ema:.4f}  lr: {current_lr:.6f}"
         )
+
+        if early_stop_patience > 0 and epochs_no_improve >= early_stop_patience:
+            print(f"[{epoch:03d}] Early stopping — {early_stop_patience}에폭 동안 val mAP 개선 없음")
+            break
 
     log_file.close()
     f1_file.close()
