@@ -156,6 +156,10 @@ def main():
         for k in keys[:-1]:
             node = node.setdefault(k, {})
         node[keys[-1]] = val
+    # wcfg가 category_to_label 등 derived 필드를 날릴 수 있으므로 원본에서 복원
+    _fresh = load_config(args.config)
+    cfg["data"]["category_to_label"] = _fresh["data"]["category_to_label"]
+    cfg["data"]["label_to_category"] = _fresh["data"]["label_to_category"]
 
     img_size = cfg["train"]["img_size"]
     phase1_lr = cfg["train"].get("phase1_lr", 0.001)
