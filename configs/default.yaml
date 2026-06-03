@@ -17,7 +17,7 @@ data:
 train:
   epochs: 500
   batch_size: 8
-  img_size: 620
+  img_size: 640
   seed: 42
 
   # --- Phase 비율 ---
