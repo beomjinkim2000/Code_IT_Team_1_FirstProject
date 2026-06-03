@@ -124,13 +124,16 @@ def main():
     set_seed(cfg["train"]["seed"])
 
     wandb.init(
-        entity="health-eat-pill-detection",
-        project="health-eat-pill-detection",
+        entity=os.environ.get("WANDB_ENTITY", "health-eat-pill-detection"),
+        project=os.environ.get("WANDB_PROJECT", "health-eat-pill-detection"),
+        name=run_name,
         config=cfg,
         resume="allow",
         tags=[cfg["model"]["name"]],
         mode="disabled" if not os.environ.get("WANDB_API_KEY") else "online",
     )
+    wandb.define_metric("epoch")
+    wandb.define_metric("*", step_metric="epoch")
 
     # sweep이 넘겨준 값으로 cfg 덮어쓰기 (일반 학습 시엔 wandb.config = cfg 그대로)
     wcfg = wandb.config
@@ -410,7 +413,7 @@ def main():
             "f1/best_mean_f1": best_mean_f1,
             **f1_log,
             **sweep_log,
-        })
+        }, step=epoch)
 
         log_writer.writerow({
             "epoch": epoch, "train_loss": round(train_loss, 6),
@@ -428,6 +431,8 @@ def main():
 
     log_file.close()
     f1_file.close()
+    wandb.summary["best_mAP_ema"] = best_mAP
+    wandb.summary["total_epochs"] = total_epochs
     wandb.finish()
     print(f"학습 완료. best_mAP(ema): {best_mAP:.4f}")
 

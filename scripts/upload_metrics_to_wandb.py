@@ -11,8 +11,8 @@ import csv
 import os
 from pathlib import Path
 
-ENTITY = "health-eat-pill-detection"
-PROJECT = "health-eat-pill-detection"
+ENTITY = os.environ.get("WANDB_ENTITY", "health-eat-pill-detection")
+PROJECT = os.environ.get("WANDB_PROJECT", "health-eat-pill-detection")
 
 CSV_DIR = Path("/tmp/health_eat_metrics")
 MODEL_PATH = Path("/Users/apple/Downloads/best_model.pt")
@@ -142,17 +142,21 @@ def upload_run(cfg: dict, dry_run: bool = False):
         notes=cfg.get("notes", ""),
         reinit=True,
     )
+    wandb.define_metric("epoch")
+    wandb.define_metric("*", step_metric="epoch")
 
     best_mAP = 0.0
     for row in rows:
         ep = int(row["epoch"])
         metrics = build_metrics(row, cfg["fmt"])
+        metrics["epoch"] = ep
         wandb.log(metrics, step=ep)
         mAP = metrics.get("val/mAP_ema", metrics.get("val/mAP", 0.0))
         best_mAP = max(best_mAP, mAP)
 
     # summary
     wandb.summary["best_mAP_ema"] = best_mAP
+    wandb.summary["total_epochs"] = cfg["epochs"]
     if cfg.get("kaggle_score") is not None:
         wandb.summary["kaggle_score"] = cfg["kaggle_score"]
 

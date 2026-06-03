@@ -193,17 +193,20 @@ def _boxes_overlap(a: tuple, b: tuple, iou_thr: float = 0.0) -> bool:
 
 def make_synth_image(
     pill_bank: list[dict],
+    pill_weights: list[float],
     bg_pool: list[np.ndarray],
     img_size: int = 640,
-    min_pills: int = 1,
-    max_pills: int = 4,
+    pill_counts: list[int] | None = None,
 ) -> tuple[np.ndarray, list[dict]] | None:
     """
-    배경 + 1~max_pills개 알약 조합으로 합성 이미지 1장 생성.
+    배경 + pill_counts 중 하나를 선택한 수만큼 알약 조합으로 합성 이미지 1장 생성.
+    pill_weights: 희귀 클래스 과샘플링용 역빈도 가중치 (pill_bank 인덱스별)
     반환: (image_bgr, [{bbox_xywh, category_id}, ...])  | None (배치 불가)
     """
-    n_pills = random.randint(min_pills, max_pills)
-    pills = random.choices(pill_bank, k=n_pills)
+    if pill_counts is None:
+        pill_counts = [3, 4]
+    n_pills = random.choice(pill_counts)
+    pills = random.choices(pill_bank, weights=pill_weights, k=n_pills)
 
     if bg_pool:
         bg = cv2.resize(
@@ -261,8 +264,8 @@ def build(args: argparse.Namespace) -> None:
     # ── WandB 초기화 (WANDB_API_KEY 없으면 disabled) ──
     use_wandb = bool(os.environ.get("WANDB_API_KEY"))
     wandb.init(
-        entity="health-eat-pill-detection",
-        project="health-eat-pill-detection",
+        entity=os.environ.get("WANDB_ENTITY", "health-eat-pill-detection"),
+        project=os.environ.get("WANDB_PROJECT", "health-eat-pill-detection"),
         name="synth-build",
         job_type="data-augmentation",
         config=vars(args),
@@ -305,8 +308,22 @@ def build(args: argparse.Namespace) -> None:
         wandb.finish(exit_code=1)
         return
 
+    # pill_bank 샘플 20개 저장 (노트북 시각화용)
+    sample_dir = out_dir / "synth" / "pill_bank_samples"
+    sample_dir.mkdir(parents=True, exist_ok=True)
+    step = max(1, len(pill_bank) // 20)
+    for i, pill in enumerate(pill_bank[::step][:20]):
+        fname = f"{i:02d}_cat{pill['category_id']}.png"
+        cv2.imwrite(str(sample_dir / fname), pill["crop"])
+
+    # 희귀 클래스 과샘플링: 클래스 등장 빈도의 역수를 가중치로 사용
+    cat_freq = Counter(p["category_id"] for p in pill_bank)
+    max_freq = max(cat_freq.values())
+    pill_weights = [max_freq / cat_freq[p["category_id"]] for p in pill_bank]
+    print(f"  클래스 {len(cat_freq)}종 | 최소 {min(cat_freq.values())}개 ~ 최대 {max_freq}개 (역빈도 가중치 적용)")
+
     # ── Phase 3: 합성 ──
-    print(f"합성 이미지 {args.n_synth}장 생성 중...")
+    print(f"합성 이미지 {args.n_synth}장 생성 중... (알약 수: {args.pill_counts})")
     coco_images: list[dict] = []
     coco_annotations: list[dict] = []
     ann_id = 1
@@ -316,10 +333,9 @@ def build(args: argparse.Namespace) -> None:
 
     for _ in tqdm(range(args.n_synth), desc="Phase 3"):
         result = make_synth_image(
-            pill_bank, bg_pool,
+            pill_bank, pill_weights, bg_pool,
             img_size=args.img_size,
-            min_pills=args.min_pills,
-            max_pills=args.max_pills,
+            pill_counts=args.pill_counts,
         )
         if result is None:
             continue
@@ -402,8 +418,10 @@ def main() -> None:
     parser.add_argument("--out_dir", default="data/augmented", help="합성 데이터 출력 폴더")
     parser.add_argument("--n_synth", type=int, default=3000, help="생성할 합성 이미지 수")
     parser.add_argument("--img_size", type=int, default=640, help="합성 이미지 해상도")
-    parser.add_argument("--min_pills", type=int, default=1, help="이미지당 최소 알약 수")
-    parser.add_argument("--max_pills", type=int, default=4, help="이미지당 최대 알약 수")
+    parser.add_argument(
+        "--pill_counts", type=int, nargs="+", default=[3, 4],
+        help="이미지당 알약 수 후보 (랜덤 선택). 예: --pill_counts 3 4",
+    )
     parser.add_argument("--padding", type=int, default=12, help="GrabCut 크롭 여백 픽셀")
     parser.add_argument("--bg_patch_size", type=int, default=320, help="배경 패치 크기")
     parser.add_argument("--n_bg_per_image", type=int, default=3, help="이미지당 배경 패치 수")
