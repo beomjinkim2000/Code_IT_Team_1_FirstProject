@@ -15,7 +15,7 @@ data:
   names: []              # class_mapping에서 자동 설정
 
 train:
-  epochs: 700
+  epochs: 1500
   batch_size: 4
   img_size: 1280
   seed: 42
