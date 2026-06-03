@@ -37,9 +37,10 @@ train:
   # --- Phase 3: backbone/neck + head 전체 fine-tune ---
   phase3_head_lr: 0.0001          # Detect head lr
   phase3_backbone_lr: 0.00001     # backbone/neck lr (head의 1/10 — pretrained 특징 보존)
-  phase3_lr_min: 0.000001         # cosine 최솟값 (1e-6, 모든 param group 공통)
+  phase3_lr_min: 0.000001         # cosine 최솟값 (모든 param group 공통)
   phase3_warmup_epochs: 5         # Phase 3 LR warmup 에폭 수 (0=비활성화)
   phase3_bn_frozen_epochs: 5      # Phase 3 진입 후 BN eval 유지 에폭 수 (0=비활성화)
+  early_stop_patience: 50         # val mAP 개선 없는 에폭 수 초과 시 조기 종료 (0=비활성화)
 
 optimizer:
   type: adamw            # adamw | sgd
