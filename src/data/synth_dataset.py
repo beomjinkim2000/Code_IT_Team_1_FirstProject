@@ -9,16 +9,17 @@ from src.data.dataset import PillDataset
 
 WANDB_ENTITY = "health-eat-pill-detection"
 WANDB_PROJECT = "health-eat-pill-detection"
-ARTIFACT_NAME = f"{WANDB_ENTITY}/{WANDB_PROJECT}/synth-dataset:latest"
 
 
-def _download_from_wandb(synth_root: Path) -> None:
-    """WandB artifact 'synth-dataset:latest' 를 synth_root 로 다운로드."""
+def _artifact_name(img_size: int) -> str:
+    return f"{WANDB_ENTITY}/{WANDB_PROJECT}/synth-dataset-{img_size}:latest"
+
+
+def _download_from_wandb(synth_root: Path, img_size: int = 640) -> None:
     import wandb
 
     api = wandb.Api()
-    artifact = api.artifact(ARTIFACT_NAME)
-    # artifact 내부 synth/ 디렉토리를 synth_root 의 부모에 내려받아 경로 맞춤
+    artifact = api.artifact(_artifact_name(img_size))
     artifact.download(root=str(synth_root.parent))
     print(f"WandB artifact 다운로드 완료: {synth_root}")
 
@@ -50,6 +51,7 @@ class SynthPillDataset(PillDataset):
         synth_root: str | Path,
         transforms: Callable | None = None,
         category_to_label: dict[int, int] | None = None,
+        img_size: int = 640,
     ) -> None:
         self.synth_root = Path(synth_root)
         self.split = "train"
@@ -61,8 +63,8 @@ class SynthPillDataset(PillDataset):
         # 로컬에 없으면 WandB artifact에서 자동 다운로드
         if not self.image_dir.exists():
             if os.environ.get("WANDB_API_KEY"):
-                print("합성 데이터 없음 → WandB artifact 다운로드 중...")
-                _download_from_wandb(self.synth_root)
+                print(f"합성 데이터 없음 → WandB artifact 다운로드 중... (synth-dataset-{img_size})")
+                _download_from_wandb(self.synth_root, img_size=img_size)
             else:
                 raise FileNotFoundError(
                     f"합성 이미지 폴더 없음: {self.image_dir}\n"

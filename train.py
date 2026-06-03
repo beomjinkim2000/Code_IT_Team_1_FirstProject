@@ -212,6 +212,7 @@ def main():
             synth_root=args.synth_data,
             transforms=train_transform(img_size, cfg.get("augmentation")),
             category_to_label=category_to_label,
+            img_size=img_size,
         )
         train_ds = ConcatDataset([train_ds, synth_ds])
         print(f"합성 데이터 추가: {len(synth_ds)}장 → 총 {len(train_ds)}장")

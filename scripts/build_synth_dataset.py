@@ -394,14 +394,15 @@ def build(args: argparse.Namespace) -> None:
     # synth 디렉토리 전체(이미지 + annotations.json)를 WandB artifact로 업로드
     # → 다음 Colab 세션에서 SynthPillDataset이 자동으로 다운로드해 재사용
     if use_wandb:
+        artifact_name = f"synth-dataset-{args.img_size}"
         artifact = wandb.Artifact(
-            name="synth-dataset",
+            name=artifact_name,
             type="dataset",
-            metadata={"n_images": n_images, "n_annotations": n_anns, "seed": args.seed},
+            metadata={"n_images": n_images, "n_annotations": n_anns, "seed": args.seed, "img_size": args.img_size},
         )
         artifact.add_dir(str(out_dir / "synth"), name="synth")
         wandb.log_artifact(artifact)
-        print("WandB artifact 'synth-dataset' 업로드 완료")
+        print(f"WandB artifact '{artifact_name}' 업로드 완료")
 
     wandb.finish()
     print(f"\n완료! 이미지 {n_images}장 | 어노테이션 {n_anns}개")
