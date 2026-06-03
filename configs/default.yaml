@@ -6,7 +6,7 @@ _required:
   - data.class_mapping
 
 model:
-  name: yolov11x          # yolov8n / yolov8s / yolov8m / yolov8l
+  name: yolo11x
   num_classes: null      # class_mapping에서 자동 설정
 
 data:
@@ -16,8 +16,8 @@ data:
 
 train:
   epochs: 700
-  batch_size: 8
-  img_size: 1024
+  batch_size: 4
+  img_size: 1280
   seed: 42
 
   # --- Phase 비율 ---
@@ -27,17 +27,17 @@ train:
   unfreeze_mode: head   # Phase 2 학습 범위: "head"(Detect 전체) / "cv3_last"(cv3 마지막만 유지)
 
   # --- Phase 1: cv3 마지막 Conv2d만 학습 ---
-  phase1_lr: 0.001
-  phase1_lr_min: 0.00001
+  phase1_lr: 0.0005
+  phase1_lr_min: 0.000005
 
   # --- Phase 2: head 전체 또는 cv3_last 유지 ---
-  phase2_lr: 0.001
-  phase2_lr_min: 0.00001
+  phase2_lr: 0.0005
+  phase2_lr_min: 0.000005
 
   # --- Phase 3: backbone/neck + head 전체 fine-tune ---
-  phase3_head_lr: 0.0001          # Detect head lr
-  phase3_backbone_lr: 0.00001     # backbone/neck lr (head의 1/10 — pretrained 특징 보존)
-  phase3_lr_min: 0.000001         # cosine 최솟값 (1e-6, 모든 param group 공통)
+  phase3_head_lr: 0.00005         # Detect head lr
+  phase3_backbone_lr: 0.000005    # backbone/neck lr (head의 1/10 — pretrained 특징 보존)
+  phase3_lr_min: 0.0000005        # cosine 최솟값 (모든 param group 공통)
   phase3_warmup_epochs: 5         # Phase 3 LR warmup 에폭 수 (0=비활성화)
   phase3_bn_frozen_epochs: 5      # Phase 3 진입 후 BN eval 유지 에폭 수 (0=비활성화)
 
