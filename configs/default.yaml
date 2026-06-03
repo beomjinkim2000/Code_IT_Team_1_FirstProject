@@ -15,9 +15,9 @@ data:
   names: []              # class_mapping에서 자동 설정
 
 train:
-  epochs: 150
+  epochs: 500
   batch_size: 8
-  img_size: 1024
+  img_size: 620
   seed: 42
 
   # --- Phase 비율 ---
