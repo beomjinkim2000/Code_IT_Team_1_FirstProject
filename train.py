@@ -119,6 +119,9 @@ def main():
         "--synth_data", default=None, metavar="DIR",
         help="합성 데이터 경로 (예: data/augmented/synth). 없으면 WandB artifact에서 자동 다운로드",
     )
+    parser.add_argument(
+        "--notes", default=None, help="WandB run notes (실험 가설·목적 한 줄 기록)",
+    )
     args = parser.parse_args()
     cfg = load_config(args.config)
     set_seed(cfg["train"]["seed"])
@@ -128,6 +131,7 @@ def main():
         project=os.environ.get("WANDB_PROJECT", "health-eat-pill-detection"),
         name=run_name,
         config=cfg,
+        notes=args.notes,
         resume="allow",
         tags=[cfg["model"]["name"]],
         mode="disabled" if not os.environ.get("WANDB_API_KEY") else "online",

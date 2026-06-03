@@ -25,7 +25,7 @@ def save_checkpoint(        #모델과 옵티마이저의 상태를 저장하는
         "val_mAP": val_mAP,     #현재 validation mAP 점수
     }
 
-    path = checkpoint_dir / f"epoch_{epoch}.pt"
+    path = checkpoint_dir / "last.pt"
     torch.save(checkpoint, path)
 
     if is_best:
