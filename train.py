@@ -142,8 +142,12 @@ def main():
     wandb.define_metric("*", step_metric="epoch")
 
     # sweep이 넘겨준 값으로 cfg 덮어쓰기 (일반 학습 시엔 wandb.config = cfg 그대로)
+    # WandB는 int 키 dict을 string 키로 직렬화하므로 derived 필드는 덮어쓰지 않는다
+    _WCFG_SKIP = {"data.category_to_label", "data.label_to_category", "data.names", "data.nc", "model.num_classes", "_required"}
     wcfg = wandb.config
     for dotkey, val in wcfg.items():
+        if dotkey in _WCFG_SKIP:
+            continue
         keys = dotkey.split(".")
         node = cfg
         for k in keys[:-1]:
