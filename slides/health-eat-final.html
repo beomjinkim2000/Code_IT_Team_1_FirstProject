@@ -1632,50 +1632,66 @@ uv run pytest tests/ -v --tb=short</div>
 <div class="slide" id="s39" style="background:linear-gradient(135deg,#09090f,#071510)">
   <div class="tag">PART 7 · CONCLUSION</div>
   <h2>성과 & 결론</h2>
-  <div class="g2" style="flex:1;gap:20px">
-    <div style="display:flex;flex-direction:column;gap:14px">
+  <div class="g3" style="flex:1;gap:16px">
+
+    <!-- 왼쪽: 수치 성과 -->
+    <div style="display:flex;flex-direction:column;gap:12px">
       <div class="card cG">
         <h3 style="color:var(--g);margin-bottom:10px">🏆 최종 달성</h3>
         <table class="tbl" style="font-size:12px">
           <tbody>
-            <tr><td>YOLOv8l 단일 최고</td><td style="color:var(--dim)">v2.7.2</td><td style="color:var(--y);font-weight:700">0.929</td></tr>
-            <tr><td>YOLO11x 단일 최고</td><td style="color:var(--b)">Q4-ep250</td><td style="color:var(--b);font-weight:700">0.943</td></tr>
-            <tr class="hl"><td><strong>WBF 앙상블 최고</strong></td><td style="color:var(--g)">9모델 WBF-v1</td><td style="color:var(--g);font-weight:700">0.956</td></tr>
-            <tr><td>전체 개선폭</td><td style="color:var(--dim)">0.173 → 0.956</td><td style="color:var(--y)">+0.783</td></tr>
+            <tr><td>YOLOv8l 단일</td><td style="color:var(--y);font-weight:700;text-align:right">0.929</td></tr>
+            <tr><td>YOLO11x 단일</td><td style="color:var(--b);font-weight:700;text-align:right">0.943</td></tr>
+            <tr class="hl"><td><strong>WBF 앙상블</strong></td><td style="color:var(--g);font-weight:800;font-size:14px;text-align:right">0.956</td></tr>
+            <tr><td style="color:var(--dim)">전체 개선</td><td style="color:var(--y);text-align:right">0.173 → <strong>+0.783</strong></td></tr>
           </tbody>
         </table>
       </div>
-      <div class="card cG">
-        <h3 style="color:var(--g);margin-bottom:8px">✅ 잘 된 점</h3>
+      <div class="card" style="background:rgba(251,191,36,.07);border-color:rgba(251,191,36,.25)">
+        <h3 style="color:var(--y);margin-bottom:8px">✅ 실제로 작동한 것</h3>
         <ul class="f" style="font-size:12px">
-          <li>EMA 도입으로 큰 폭 향상 (+0.194)</li>
-          <li>BN Freeze 버그 발견 및 신속 해결</li>
-          <li>Mosaic 제거로 Train/Test 도메인 일치</li>
-          <li>YOLO11x 전환으로 단일 모델 한계 돌파</li>
-          <li>WBF 앙상블으로 최고 점수 달성</li>
-          <li>Obsidian + GitHub Actions 자동화 협업 인프라</li>
+          <li><strong>EMA 단 한 번</strong>으로 +0.194 — 단일 최고 개선 인자</li>
+          <li><strong>Mosaic OFF</strong> — train/test 도메인 불일치 제거로 +0.159</li>
+          <li><strong>YOLO11x(C2PSA)</strong> — 동일 조건 YOLOv8l 대비 확연한 격차</li>
+          <li><strong>9모델 WBF</strong> — 단일 최고(0.943)보다 +0.013 추가 확보</li>
+          <li>3-Phase 커리큘럼 — COCO 사전학습 유지하며 안정 수렴</li>
         </ul>
       </div>
     </div>
-    <div style="display:flex;flex-direction:column;gap:14px">
+
+    <!-- 중간: 핵심 교훈 -->
+    <div style="display:flex;flex-direction:column;gap:12px">
       <div class="card cB">
         <h3 style="color:var(--b);margin-bottom:8px">📌 핵심 교훈</h3>
         <ul class="f" style="font-size:12px">
-          <li>val mAP@50 포화 후엔 <strong>Kaggle score가 유일한 신호</strong></li>
-          <li>WBF 파라미터 튜닝보다 <strong>입력 모델 품질</strong>이 결정적</li>
-          <li>단순 증강보다 <strong>새 장면 생성(GrabCut Synth)</strong>이 다양성에 효과적</li>
-          <li>배치 작으면 train loss oscillation → 판단 기준은 항상 Kaggle</li>
+          <li><strong>val 포화 이후엔 Kaggle이 유일한 신호</strong> — "val이 좋아 보여도 믿지 말 것"</li>
+          <li><strong>loss_gap→0 = 증강 다양성 고갈</strong> — 고전적 과적합 신호와 구분 필요</li>
+          <li><strong>WBF 성능 = 모델 다양성</strong> — 파라미터 튜닝은 효과 없음(−0.001)</li>
+          <li><strong>배치 반감 시 LR도 반감</strong> (linear scaling rule) — 위반 시 해상도 실험 실패</li>
+          <li>val 37장은 synth·고해상도 패턴을 대표 못 함 — 데이터 구성이 val 신뢰도 결정</li>
         </ul>
       </div>
-      <div class="card cO">
-        <h3 style="color:var(--o);margin-bottom:8px">🔮 아쉬운 점 & 다음 단계</h3>
+      <div class="card" style="background:rgba(167,139,250,.07);border-color:rgba(167,139,250,.25)">
+        <h3 style="color:var(--p);margin-bottom:8px">💡 다음에 한다면</h3>
         <ul class="f" style="font-size:12px">
-          <li>Q5 img1024 Kaggle 미제출 — 시간 부족</li>
-          <li>Q6 AI Hub 추가 데이터 미진행</li>
-          <li>val set이 너무 작아 early stopping 신뢰도 한계</li>
+          <li>GrabCut Synth 효과 Kaggle 검증 후 WBF 재구성</li>
+          <li>1280px + ep400 수렴 확인 → 단일 모델 0.95+ 목표</li>
         </ul>
       </div>
     </div>
+
+    <!-- 오른쪽: 아쉬운 점 -->
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="card cR">
+        <h3 style="color:var(--r);margin-bottom:8px">😤 아쉬운 점</h3>
+        <ul class="f" style="font-size:12px;line-height:1.9">
+          <li><strong>모델 비교 부재</strong> — RT-DETR·Co-DETR 등 다른 아키텍처와 비교 없이 YOLO 계열만 실험. 진짜 모델 선택이었는지 검증 안 됨</li>
+          <li><strong>실험관리 미숙</strong> — 조건 변경이 중복·누적되어 단일 변수 격리가 어려웠음. "이게 뭐 때문에 올랐지?"를 확신하기 어려운 실험들이 있었음</li>
+          <li><strong>val set 37장</strong> — early stopping을 Kaggle에 의존할 수밖에 없는 구조적 한계. 별도 holdout set 필요했음</li>
+        </ul>
+      </div>
+    </div>
+
   </div>
 </div>
 
