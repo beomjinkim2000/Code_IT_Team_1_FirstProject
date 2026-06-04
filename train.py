@@ -122,6 +122,9 @@ def main():
     parser.add_argument(
         "--notes", default=None, help="WandB run notes (실험 가설·목적 한 줄 기록)",
     )
+    parser.add_argument(
+        "--num_workers", type=int, default=8, help="DataLoader 워커 수 (A100: 8, T4: 4, CPU: 0)",
+    )
     args = parser.parse_args()
     cfg = load_config(args.config)
     set_seed(cfg["train"]["seed"])
@@ -261,17 +264,17 @@ def main():
             manual=cw_cfg.get("manual"),
         )
         sampler = WeightedRandomSampler(sample_weights, num_samples=len(sample_weights), replacement=True)
-        train_loader = DataLoader(train_ds, batch_size=cfg["train"]["batch_size"], sampler=sampler, collate_fn=collate_fn, num_workers=8, pin_memory=True, persistent_workers=True)
+        train_loader = DataLoader(train_ds, batch_size=cfg["train"]["batch_size"], sampler=sampler, collate_fn=collate_fn, num_workers=args.num_workers, pin_memory=True, persistent_workers=True)
         print(f"class_weights: method={cw_method}, sample_weights min={min(sample_weights):.3f} max={max(sample_weights):.3f}")
     else:
-        train_loader = DataLoader(train_ds, batch_size=cfg["train"]["batch_size"], shuffle=True, collate_fn=collate_fn, num_workers=8, pin_memory=True, persistent_workers=True)
+        train_loader = DataLoader(train_ds, batch_size=cfg["train"]["batch_size"], shuffle=True, collate_fn=collate_fn, num_workers=args.num_workers, pin_memory=True, persistent_workers=True)
 
     val_loader = DataLoader(
         val_ds,
         batch_size=cfg["train"]["batch_size"],
         shuffle=False,
         collate_fn=collate_fn,
-        num_workers=8,
+        num_workers=args.num_workers,
         pin_memory=True,
         persistent_workers=True,
     )
