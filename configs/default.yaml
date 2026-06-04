@@ -41,6 +41,7 @@ train:
   phase3_warmup_epochs: 5         # Phase 3 LR warmup 에폭 수 (0=비활성화)
   phase3_bn_frozen_epochs: 5      # Phase 3 진입 후 BN eval 유지 에폭 수 (0=비활성화)
   early_stop_patience: 50         # val mAP 개선 없는 에폭 수 초과 시 조기 종료 (0=비활성화)
+  early_stop_min_delta: 0.03      # 이 수치 이상 mAP가 오르지 않으면 개선으로 미인정
 
 optimizer:
   type: adamw            # adamw | sgd
