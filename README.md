@@ -92,6 +92,19 @@ outputs/submissions/submission_v1.csv
 
 ---
 
+## 발표 자료
+
+> **GitHub Pages** → **https://beomjinkim2000.github.io/Code_IT_Team_1_FirstProject/slides/**
+
+| 자료 | 링크 |
+|---|---|
+| 최종 발표 슬라이드 | [slides/health-eat-final.html](https://beomjinkim2000.github.io/Code_IT_Team_1_FirstProject/slides/health-eat-final.html) |
+| WandB 실험 리포트 | [slides/health-eat-wandb-report.html](https://beomjinkim2000.github.io/Code_IT_Team_1_FirstProject/slides/health-eat-wandb-report.html) |
+
+Best Score **0.956** · YOLO11x · 3-Phase 학습 · WBF 앙상블 · GrabCut 합성 데이터
+
+---
+
 ## 팀 문서
 
 | 항목 | 링크 |

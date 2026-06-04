@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Health Eat — 실험 기록</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --page:#f4f4f6;--card:#ffffff;--border:#e2e2e6;--border2:#ececef;
+  --text:#111118;--sub:#52525e;--muted:#88889a;
+  --accent:#1b4ef8;--accent-pale:#eef1ff;
+  --green:#0d9e6e;--green-pale:#e8f7f2;
+  --red:#d63030;--red-pale:#fef2f2;
+  --yellow:#b45309;--yellow-pale:#fffbeb;
+}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--page);color:var(--text);font-size:14px;line-height:1.7;-webkit-font-smoothing:antialiased}
+.doc{max-width:860px;margin:0 auto;padding:0 0 80px}
+
+/* Header */
+.hdr{background:var(--card);border-bottom:1px solid var(--border);padding:44px 52px 38px;margin-bottom:20px}
+.hdr-title{font-size:24px;font-weight:700;letter-spacing:-.02em;margin-bottom:6px}
+.hdr-meta{font-size:13px;color:var(--muted);margin-bottom:26px}
+.kpi-row{display:flex;gap:0}
+.kpi{padding:12px 20px;border:1px solid var(--border);border-right:none;background:#fafafe}
+.kpi:first-child{border-radius:6px 0 0 6px}
+.kpi:last-child{border-right:1px solid var(--border);border-radius:0 6px 6px 0}
+.kpi-v{font-size:20px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.kpi-v.g{color:var(--green)}.kpi-v.b{color:var(--accent)}
+.kpi-l{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* Section */
+.section{background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:16px;overflow:hidden}
+.sec-hd{padding:16px 26px 14px;border-bottom:1px solid var(--border2)}
+.sec-t{font-size:15px;font-weight:600}
+.sec-bd{padding:20px 26px}
+
+/* Experiment card */
+.exp{background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:14px;overflow:hidden}
+.exp-hd{padding:15px 24px 13px;border-bottom:1px solid var(--border2);display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.exp-q{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);min-width:30px}
+.exp-title{font-size:15px;font-weight:600;flex:1}
+.exp-tag{font-size:11px;font-weight:600;padding:3px 9px;border-radius:4px;white-space:nowrap}
+.et-ok{background:var(--green-pale);color:var(--green)}
+.et-fail{background:var(--red-pale);color:var(--red)}
+.et-wip{background:var(--yellow-pale);color:var(--yellow)}
+.et-part{background:#f0f0f4;color:var(--sub)}
+.exp-bd{padding:18px 24px}
+
+/* HAR (Hypothesis / Expected / Actual) */
+.har{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px}
+.hb{padding:13px 14px;border-radius:6px;border:1px solid var(--border2)}
+.hb-l{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px}
+.hb-t{font-size:12.5px;color:var(--sub);line-height:1.65}
+.hb-t strong{color:var(--text);font-weight:600}
+.hb.h-hyp{background:#f8f8fb}.hb.h-hyp .hb-l{color:var(--muted)}
+.hb.h-exp{background:var(--accent-pale)}.hb.h-exp .hb-l{color:var(--accent)}
+.hb.h-ok{background:var(--green-pale)}.hb.h-ok .hb-l{color:var(--green)}
+.hb.h-ok .hb-t strong{color:var(--green)}
+.hb.h-fail{background:var(--red-pale)}.hb.h-fail .hb-l{color:var(--red)}
+.hb.h-fail .hb-t strong{color:var(--red)}
+.hb.h-wip{background:var(--yellow-pale)}.hb.h-wip .hb-l{color:var(--yellow)}
+.hb.h-unk{background:#f4f4f6}.hb.h-unk .hb-l{color:var(--muted)}
+
+/* Table */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead th{padding:7px 11px;text-align:left;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:#f8f8fb;border-top:1px solid var(--border2);border-bottom:1px solid var(--border2);white-space:nowrap}
+tbody td{padding:8px 11px;border-bottom:1px solid var(--border2);color:var(--sub);vertical-align:middle}
+tbody tr:last-child td{border:none}
+tbody tr:hover td{background:#fafafe}
+tr.hl td{background:var(--green-pale)}
+tr.hl td:first-child{border-left:3px solid var(--green)}
+tr.wn td{background:var(--red-pale)}
+tr.wn td:first-child{border-left:3px solid var(--red)}
+tr.nd td{opacity:.55}
+.sc{font-weight:700;font-size:13px}.sc.g{color:var(--green)}.sc.b{color:var(--accent)}.sc.r{color:var(--red)}.sc.d{color:var(--muted)}
+.dt{font-size:11.5px;color:var(--green);margin-left:4px;font-weight:500}
+
+/* Callout */
+.callout{border-radius:6px;padding:12px 15px;margin-top:12px;font-size:12.5px;line-height:1.75}
+.callout.warn{background:var(--red-pale);border-left:3px solid var(--red)}
+.callout.ok{background:var(--green-pale);border-left:3px solid var(--green)}
+.callout.info{background:var(--accent-pale);border-left:3px solid var(--accent)}
+.callout.note{background:var(--yellow-pale);border-left:3px solid #d97706}
+.c-label{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px}
+.callout.warn .c-label{color:var(--red)}.callout.ok .c-label{color:var(--green)}
+.callout.info .c-label{color:var(--accent)}.callout.note .c-label{color:#d97706}
+.callout p,.callout li{color:var(--sub);font-size:12.5px}
+.callout strong{color:var(--text);font-weight:600}
+.callout ul{margin-left:16px;margin-top:4px}
+.callout li{margin-bottom:2px}
+
+/* Tag / Badge */
+.tag{display:inline-block;font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:4px}
+.tg{background:var(--green-pale);color:var(--green)}.tr{background:var(--red-pale);color:var(--red)}.tb{background:var(--accent-pale);color:var(--accent)}
+.badge{display:inline-flex;align-items:center;font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:99px}
+.bd-run{background:var(--accent-pale);color:var(--accent)}.bd-done{background:var(--green-pale);color:var(--green)}
+
+/* Misc */
+code{font-family:'Menlo','Monaco',monospace;font-size:11px;background:#f0f0f4;padding:1px 5px;border-radius:3px;color:#4338ca}
+.hr{height:1px;background:var(--border2);margin:16px 0}
+p.lead{font-size:13px;color:var(--sub);line-height:1.8;margin-bottom:14px}
+p{font-size:12.5px;color:var(--sub);line-height:1.75}
+strong{color:var(--text);font-weight:600}
+.lbl{font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ibox{border:1px solid var(--border2);border-radius:6px;padding:13px 15px;background:#fafafe}
+.ibox-t{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+.irow{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border2);font-size:12px}
+.irow:last-child{border:none}.ik{color:var(--sub)}.iv{font-weight:500;color:var(--text)}
+.ph-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.ph-table th{padding:7px 11px;text-align:left;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:#f8f8fb;border-top:1px solid var(--border2);border-bottom:1px solid var(--border2)}
+.ph-table td{padding:8px 11px;border-bottom:1px solid var(--border2);color:var(--sub)}
+.ph-table tr:last-child td{border:none}
+.ph-num{font-weight:600;color:var(--text);white-space:nowrap}
+.bchart{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+.brow{display:flex;align-items:center;gap:10px}
+.blbl{width:180px;flex-shrink:0;font-size:11.5px;color:var(--sub);text-align:right}
+.btrk{flex:1;height:7px;background:#eeeef2;border-radius:4px;position:relative;overflow:hidden}
+.bfil{height:100%;border-radius:4px;position:absolute;left:0}
+.bv{font-size:12px;font-weight:600;color:var(--text);margin-left:8px;white-space:nowrap}
+
+footer{max-width:860px;margin:20px auto 0;padding:0 0 40px;display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+
+@media(max-width:680px){
+  .hdr{padding:28px 18px 24px}.sec-bd,.exp-bd{padding-left:16px;padding-right:16px}
+  .hdr-title{font-size:20px}.kpi-row{flex-wrap:wrap}.har,.g2{grid-template-columns:1fr}.blbl{width:110px}
+}
+</style>
+</head>
+<body>
+<div class="doc">
+
+<!-- ══ 헤더 ══ -->
+<header class="hdr">
+  <div class="hdr-title">Health Eat — 경구약제 탐지 실험 기록</div>
+  <p class="hdr-meta">Team 1 (김범진 · 황원재 · 유재열 · 박창준) &nbsp;·&nbsp; 2026-06-04 &nbsp;·&nbsp; Kaggle 제출 기록 기반</p>
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-v g">0.956</div><div class="kpi-l">Best Kaggle (WBF 앙상블)</div></div>
+    <div class="kpi"><div class="kpi-v b">0.949</div><div class="kpi-l">단일 모델 Best (1024px ep200)</div></div>
+    <div class="kpi"><div class="kpi-v">+0.786</div><div class="kpi-l">총 개선폭 (0.170 → 0.956)</div></div>
+    <div class="kpi"><div class="kpi-v">34</div><div class="kpi-l">Kaggle 제출 횟수</div></div>
+  </div>
+</header>
+
+<!-- ══ 중간 발표 이전 ══ -->
+<div class="section">
+  <div class="sec-hd"><h2 class="sec-t">중간 발표 이전 — 점수 흐름</h2></div>
+  <div class="sec-bd">
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>버전</th><th>변경사항</th><th>모델</th><th>Kaggle</th><th>Δ</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-weight:500;color:var(--text)">v1.0</td>
+            <td>베이스라인 ep50</td><td>YOLOv8n</td>
+            <td><span class="sc d">0.173</span></td><td>—</td>
+          </tr>
+          <tr>
+            <td style="font-weight:500;color:var(--text)">v2.1</td>
+            <td>3-Phase + AdamW + Mosaic ON</td><td>YOLOv8n</td>
+            <td><span class="sc b">0.540</span></td><td><span class="dt">+0.367</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:500;color:var(--text)">v2.2</td>
+            <td><strong>Mosaic OFF</strong></td><td>YOLOv8n</td>
+            <td><span class="sc b">0.699</span></td><td><span class="dt">+0.159</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:500;color:var(--text)">v2.3–v2.4</td>
+            <td>Phase 3 BN Freeze 버그 수정</td><td>YOLOv8n</td>
+            <td><span class="sc b">0.721</span></td><td><span class="dt">+0.022</span></td>
+          </tr>
+          <tr class="hl">
+            <td style="font-weight:600;color:var(--text)">v2.5</td>
+            <td><strong>EMA 도입 + YOLOv8s</strong></td><td>YOLOv8s</td>
+            <td><span class="sc g">0.916</span></td><td><span class="dt">+0.195</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:500;color:var(--text)">v2.7</td>
+            <td>YOLOv8l 확장</td><td>YOLOv8l</td>
+            <td><span class="sc g">0.929</span></td><td><span class="dt">+0.013</span></td>
+          </tr>
+          <tr class="hl">
+            <td style="font-weight:700;color:var(--text)">WBF-v1</td>
+            <td><strong>9모델 WBF 앙상블 전체</strong></td><td>YOLOv8l×8 + x×1</td>
+            <td><span class="sc g" style="font-size:14px">0.956</span></td><td><span class="dt">+0.027</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="hr"></div>
+    <div class="lbl">점수 추이</div>
+    <div class="bchart">
+      <div class="brow">
+        <div class="blbl">v1.0 베이스라인</div>
+        <div class="btrk"><div class="bfil" style="width:18%;background:#fca5a5"></div></div>
+        <div class="bv" style="color:var(--sub)">0.173</div>
+      </div>
+      <div class="brow">
+        <div class="blbl">v2.2 Mosaic OFF</div>
+        <div class="btrk"><div class="bfil" style="width:73%;background:#93c5fd"></div></div>
+        <div class="bv" style="color:var(--sub)">0.699</div>
+      </div>
+      <div class="brow">
+        <div class="blbl">v2.5 EMA 도입</div>
+        <div class="btrk"><div class="bfil" style="width:96%;background:#6ee7b7"></div></div>
+        <div class="bv" style="color:var(--green);font-weight:600">0.916</div>
+      </div>
+      <div class="brow">
+        <div class="blbl">v2.7 YOLOv8l</div>
+        <div class="btrk"><div class="bfil" style="width:97%;background:#34d399"></div></div>
+        <div class="bv" style="color:var(--green);font-weight:600">0.929</div>
+      </div>
+      <div class="brow">
+        <div class="blbl" style="font-weight:600;color:var(--text)">WBF-v1 9모델</div>
+        <div class="btrk" style="height:9px"><div class="bfil" style="width:100%;background:linear-gradient(90deg,#059669,#1d4ed8)"></div></div>
+        <div class="bv" style="color:var(--green);font-weight:700;font-size:13px">0.956</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Q3 ══ -->
+<div class="exp">
+  <div class="exp-hd">
+    <span class="exp-q">Q3</span>
+    <span class="exp-title">아키텍처 비교 — YOLOv8x vs YOLO11x</span>
+    <span class="exp-tag et-ok">가설 맞음</span>
+  </div>
+  <div class="exp-bd">
+    <div class="har">
+      <div class="hb h-hyp">
+        <div class="hb-l">가설</div>
+        <div class="hb-t">YOLO11x의 C2PSA 블록이 알약 특징을 더 잘 포착하고, 파라미터 수도 적어 일반화에 유리할 것.</div>
+      </div>
+      <div class="hb h-exp">
+        <div class="hb-l">예상</div>
+        <div class="hb-t">동일 조건 (ep150, 640px, batch=8) 직접 비교에서 YOLO11x Kaggle 점수 더 높을 것.</div>
+      </div>
+      <div class="hb h-ok">
+        <div class="hb-l">실제 결과</div>
+        <div class="hb-t">YOLOv8x <strong>0.91650</strong> vs YOLO11x <strong>0.93817</strong><br>→ <strong>+0.022</strong> 우세. YOLO11x 채택.<br>이후 전 실험 기준 아키텍처.</div>
+      </div>
+    </div>
+    <div class="callout info">
+      <div class="c-label">선택 근거</div>
+      <p>구조 분석이 아닌 <strong>Kaggle 점수 직접 비교로 결정.</strong> C2PSA가 알약에 유리하다는 건 사후 해석일 뿐.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Q1 / Q2 ══ -->
+<div class="exp">
+  <div class="exp-hd">
+    <span class="exp-q">Q1 · Q2</span>
+    <span class="exp-title">앙상블 최적화 — 모델 구성 · WBF 파라미터</span>
+    <span class="exp-tag et-fail">Q1 미실행 · Q2 하락</span>
+  </div>
+  <div class="exp-bd">
+    <p class="lead">WBF-v1 (전체 9모델, 0.956) 기준으로 두 방향 검증. Kaggle 제출 기록으로 실측.</p>
+
+    <div class="lbl" style="margin-bottom:8px">Q1 — 약한 모델 제거하면 올라가나?</div>
+    <div class="har">
+      <div class="hb h-hyp">
+        <div class="hb-l">가설</div>
+        <div class="hb-t">val mAP 낮은 모델이 WBF 박스 합의를 흐려 앙상블 성능을 끌어내린다. 상위 모델만 남기면 점수 오를 것.</div>
+      </div>
+      <div class="hb h-exp">
+        <div class="hb-l">예상</div>
+        <div class="hb-t">val mAP 0.97↑ 상위 4모델만 → WBF-v1(0.956) 돌파.</div>
+      </div>
+      <div class="hb h-unk">
+        <div class="hb-l">실제 결과</div>
+        <div class="hb-t"><strong>Kaggle 미제출 — 실행 안 됨.</strong><br>계획만 있었고 실제로 제출한 기록 없음. 가설 검증 미완.</div>
+      </div>
+    </div>
+
+    <div class="lbl" style="margin-top:14px;margin-bottom:8px">Q2 — WBF 파라미터 조정하면 올라가나?</div>
+    <div class="har">
+      <div class="hb h-hyp">
+        <div class="hb-l">가설</div>
+        <div class="hb-t">iou_thr · skip_box_thr를 올리면 박스 필터링이 더 정교해져 점수 향상.</div>
+      </div>
+      <div class="hb h-exp">
+        <div class="hb-l">예상</div>
+        <div class="hb-t">iou=0.55, skip=0.3으로 조정 → WBF-v1 0.956 돌파.</div>
+      </div>
+      <div class="hb h-fail">
+        <div class="hb-l">실제 결과</div>
+        <div class="hb-t">WBF-v1 <strong>0.95646</strong> → WBF-v2 <strong>0.95500</strong><br>→ <strong>−0.001 하락.</strong> 파라미터 조정 효과 없음.</div>
+      </div>
+    </div>
+
+    <div class="hr"></div>
+    <div class="lbl">전체 WBF 제출 이력 (Kaggle 실측)</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>날짜</th><th>설명</th><th>구성</th><th>Kaggle</th><th>비고</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="color:var(--muted)">5/29</td>
+            <td style="color:var(--text)">V3: yolov8l EMA WBF</td>
+            <td>YOLOv8l EMA 체크포인트</td>
+            <td><span class="sc b">0.951</span></td>
+            <td style="color:var(--muted);font-size:11px">초기 앙상블 시도</td>
+          </tr>
+          <tr>
+            <td style="color:var(--muted)">5/29</td>
+            <td style="color:var(--text)">V4-1,2,3: yolov8l WBF 350ep</td>
+            <td>YOLOv8l 350ep 3종</td>
+            <td><span class="sc b">0.954</span></td>
+            <td style="color:var(--muted);font-size:11px">모델 추가</td>
+          </tr>
+          <tr class="hl">
+            <td style="color:var(--muted)">6/01</td>
+            <td style="font-weight:600;color:var(--text)">WBF-v1: all checkpoints</td>
+            <td><strong>YOLOv8l×8 + YOLOv8x×1 전체</strong></td>
+            <td><span class="sc g" style="font-size:14px">0.956</span></td>
+            <td><span class="tag tg">현재 최고</span></td>
+          </tr>
+          <tr class="wn">
+            <td style="color:var(--muted)">6/01</td>
+            <td style="color:var(--text)">WBF-v2: yolov8l EMA + raw</td>
+            <td>iou=0.55, skip=0.3 (9모델 동일 추정)</td>
+            <td><span class="sc r">0.955</span></td>
+            <td><span class="tag tr">−0.001 하락</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout warn" style="margin-top:14px">
+      <div class="c-label">결론</div>
+      <p>Q1은 실행 안 됨. Q2 파라미터 조정은 오히려 −0.001. <strong>현재 최고 앙상블은 WBF-v1 (0.95646)</strong>. Q5 완료 후 새 모델 추가해 앙상블 재구성 예정.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Q4 ══ -->
+<div class="exp">
+  <div class="exp-hd">
+    <span class="exp-q">Q4</span>
+    <span class="exp-title">최적 epoch 탐색 — val 지표가 전부 틀렸다</span>
+    <span class="exp-tag et-fail">가설 틀림 — val 신호 실패</span>
+  </div>
+  <div class="exp-bd">
+    <div class="har">
+      <div class="hb h-hyp">
+        <div class="hb-l">가설</div>
+        <div class="hb-t">val mAP가 계속 오르고 있으니 epoch을 늘릴수록 Kaggle도 오를 것. val 지표로 최적 epoch을 판단할 수 있다.</div>
+      </div>
+      <div class="hb h-exp">
+        <div class="hb-l">예상</div>
+        <div class="hb-t">ep700 쪽이 최고점. val mAP plateau 시점 = Kaggle 최고점.</div>
+      </div>
+      <div class="hb h-fail">
+        <div class="hb-l">실제 결과</div>
+        <div class="hb-t">ep250(<strong>0.943</strong>) 이후 Kaggle 하락. ep700에서 val mAP <strong>0.975</strong>(↑최고)임에도 Kaggle <strong>0.936</strong>(↓역전). <strong>val 지표 3종 모두 신호 실패.</strong></div>
+      </div>
+    </div>
+
+    <div class="hr"></div>
+    <div class="lbl">Epoch별 실측값 (Kaggle 제출 + WandB)</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>Epoch</th><th>val mAP@50</th><th>val mAP@50-95 EMA</th><th>loss_gap</th><th>Kaggle</th><th>판정</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="color:var(--text);font-weight:500">ep150</td>
+            <td>1.000</td><td>~0.617</td><td>—</td>
+            <td><span class="sc b">0.938</span></td>
+            <td style="color:var(--muted);font-size:11px">Q3 기준점</td>
+          </tr>
+          <tr>
+            <td style="color:var(--text);font-weight:500">ep200</td>
+            <td>1.000</td><td>0.960</td><td>—</td>
+            <td><span class="sc b">0.941</span></td>
+            <td><span class="dt">+0.003</span></td>
+          </tr>
+          <tr class="hl">
+            <td style="color:var(--text);font-weight:700">ep250</td>
+            <td>1.000</td><td>0.963</td><td>—</td>
+            <td><span class="sc g" style="font-size:14px">0.94325</span></td>
+            <td><span class="tag tg">마지막 확인 피크</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text);font-weight:500">ep300 / ep350</td>
+            <td>1.000</td><td>0.967 / 0.974</td><td>−0.47 (ep351)</td>
+            <td style="color:var(--muted);font-style:italic">미제출</td>
+            <td style="font-size:11px;color:var(--muted)">실제 피크 ep250~350 추정</td>
+          </tr>
+          <tr class="wn">
+            <td style="color:var(--text);font-weight:500">ep600</td>
+            <td>1.000</td><td>0.973</td><td>—</td>
+            <td><span class="sc r">0.942</span></td>
+            <td style="font-size:11px;color:var(--muted)">하락 시작</td>
+          </tr>
+          <tr class="wn">
+            <td style="color:var(--text);font-weight:500">ep700</td>
+            <td>1.000</td><td><strong style="color:var(--red)">0.975</strong> ← val 최고</td><td>−0.11 ≈ 수렴</td>
+            <td><span class="sc r">0.936</span></td>
+            <td style="font-size:11px;color:var(--muted)">val 최고임에도 역전</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="hr"></div>
+    <div class="lbl">왜 val 지표가 전부 실패했는가</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>지표</th><th>관측</th><th>기대한 신호</th><th>실패 원인</th><th>사용 가능?</th></tr>
+        </thead>
+        <tbody>
+          <tr class="wn">
+            <td style="color:var(--text);font-weight:500">val mAP@50</td>
+            <td>ep200~700 내내 <strong>1.000</strong></td>
+            <td>하락 시 early stop</td>
+            <td>val 37장 완전 암기 → 포화, 신호 소멸</td>
+            <td><span class="tag tr">불가</span></td>
+          </tr>
+          <tr class="wn">
+            <td style="color:var(--text);font-weight:500">val mAP@50-95</td>
+            <td>ep700까지 완만히 ↑ (0.975)</td>
+            <td>plateau = 수렴</td>
+            <td>ep250~700 사이도 계속 올라 허위 신호</td>
+            <td><span class="tag tr">불가</span></td>
+          </tr>
+          <tr class="wn">
+            <td style="color:var(--text);font-weight:500">val loss</td>
+            <td>ep700까지 단조 감소</td>
+            <td>상승 시 과적합 감지</td>
+            <td>loss_gap ≈ 0 — 고전적 신호 없음</td>
+            <td><span class="tag tr">불가</span></td>
+          </tr>
+          <tr class="hl">
+            <td style="font-weight:700;color:var(--text)">Kaggle 점수</td>
+            <td>ep250 <strong style="color:var(--green)">0.943</strong> → ep700 <strong style="color:var(--red)">0.936</strong></td>
+            <td>—</td>
+            <td style="color:var(--green);font-weight:600">유일한 진짜 신호</td>
+            <td><span class="tag tg">유일</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn" style="margin-top:14px">
+      <div class="c-label">메커니즘 — loss_gap으로 읽는 증강 신호 소진</div>
+      <p><code>loss_gap</code>(val−train)이 0에 수렴하는 건 과적합이 아니라 <strong>데이터 증강 다양성을 전부 소진한 상태</strong>를 뜻함. ep1에서 −4.94이던 gap이 ep651에서 −0.11로 수렴 → 학습할 새로운 패턴이 없어진 것. val 37장이 실제 테스트 분포를 대표하지 못해서 val은 계속 좋아 보이지만 Kaggle은 떨어짐.</p>
+    </div>
+    <div class="callout ok" style="margin-top:10px">
+      <div class="c-label">결론 및 적용</div>
+      <p><strong>최적 epoch = ep250~ep350 추정</strong> (ep250 = 마지막 확인 피크 0.94325. ep300/350 미제출). ep600부터 확실히 하락. 병목 = <strong>데이터 다양성 부족</strong>. 적용: epochs 1500 → <strong>400으로 축소</strong>, Early stop <strong>Phase 3 전용</strong> (<code>patience=50, delta=0.03</code>).</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Q5-A: 고해상도 ══ -->
+<div class="exp">
+  <div class="exp-hd">
+    <span class="exp-q">Q5-A</span>
+    <span class="exp-title">고해상도 실험 — 640px vs 1024px vs 1280px</span>
+    <span class="exp-tag et-ok">완료</span>
+  </div>
+  <div class="exp-bd">
+    <div class="har">
+      <div class="hb h-hyp">
+        <div class="hb-l">가설</div>
+        <div class="hb-t">해상도를 올리면 알약 각인·텍스트가 보존되어 클래스 구분력이 높아진다.</div>
+      </div>
+      <div class="hb h-exp">
+        <div class="hb-l">예상</div>
+        <div class="hb-t">동일 epoch 기준으로 1280px &gt; 1024px &gt; 640px 순서로 Kaggle 점수가 높을 것.</div>
+      </div>
+      <div class="hb h-fail">
+        <div class="hb-l">실제 결과</div>
+        <div class="hb-t">1280px ep~150 Kaggle <strong>0.90857</strong> — 640px ep150 <strong>0.93817</strong>보다 <strong>−0.030 하락</strong>. 1024px ep200은 <strong>0.94861</strong>로 개선. 해상도가 높다고 무조건 유리하지 않음.</div>
+      </div>
+    </div>
+    <div class="tbl-wrap" style="margin-top:14px">
+      <table>
+        <thead>
+          <tr><th>조건</th><th>해상도</th><th>epochs</th><th>batch</th><th>LR (phase1/2)</th><th>val mAP_ema</th><th>Kaggle</th><th>Δ vs 640</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-weight:600;color:var(--text)">기준선</td>
+            <td>640px</td><td>ep150</td><td>8</td><td><code>5e-4</code></td>
+            <td><span class="sc">0.945</span></td>
+            <td><span class="sc b">0.93817</span></td>
+            <td>—</td>
+          </tr>
+          <tr class="hl">
+            <td style="font-weight:600;color:var(--text)">1024px</td>
+            <td>1024px</td><td>ep200 *</td><td>4</td><td><code>5e-4</code></td>
+            <td style="color:var(--muted)">—</td>
+            <td><span class="sc g">0.94861</span></td>
+            <td><span class="dt">+0.010</span></td>
+          </tr>
+          <tr class="wn">
+            <td style="font-weight:700;color:var(--text)">1280px</td>
+            <td><strong>1280px</strong></td><td>ep~150</td><td>4</td><td><code>5e-4</code> ← 동일</td>
+            <td><span class="sc">0.860</span></td>
+            <td><span class="sc r">0.90857</span></td>
+            <td style="color:var(--red);font-weight:600">−0.030</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:11.5px;color:var(--muted);margin-top:6px">* 1024px는 ep200으로 epoch 조건이 달라 직접 비교는 불가. 참고용.</p>
+    <div class="callout warn" style="margin-top:10px">
+      <div class="c-label">1280px 하락 원인 — 배치 줄였는데 LR 그대로</div>
+      <p>640px: <code>batch=8, LR=5e-4</code> → 1280px: <code>batch=4, LR=5e-4</code>. 배치를 절반으로 줄였지만 LR은 동일하게 유지. Linear scaling rule 기준으로 batch 8→4 시 LR도 절반(<code>2.5e-4</code>)으로 줄여야 하는데 그대로 두어 <strong>effective LR이 상대적으로 높아 학습이 불안정</strong>해진 것으로 추정.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Q5-B: synth ══ -->
+<div class="exp">
+  <div class="exp-hd">
+    <span class="exp-q">Q5-B</span>
+    <span class="exp-title">합성 데이터 실험 — GrabCut synth 3,000장 + ep400</span>
+    <span class="exp-tag et-wip">진행 중 · Kaggle 미제출</span>
+  </div>
+  <div class="exp-bd">
+    <div class="har">
+      <div class="hb h-hyp">
+        <div class="hb-l">가설</div>
+        <div class="hb-t">GrabCut 합성 3,000장(640px)을 추가하면 ep250에서 꺾이던 plateau가 ep400까지 밀린다 — 과적합 없이 학습 지속.</div>
+      </div>
+      <div class="hb h-exp">
+        <div class="hb-l">예상</div>
+        <div class="hb-t">ep400 구간에서도 Kaggle 점수 상승 지속. ep250 피크(<strong>0.94325</strong>) 돌파.</div>
+      </div>
+      <div class="hb h-unk">
+        <div class="hb-l">실제 결과</div>
+        <div class="hb-t">학습 ep343 진행 중. <strong>Kaggle 미제출 — 결과 없음</strong>.<br>val mAP50 = 1.0 포화(ep186~)이나 val set 한계이므로 판단 불가. 완료 후 제출 예정.</div>
+      </div>
+    </div>
+    <div class="callout warn" style="margin-top:12px">
+      <div class="c-label">val 포화 해석 주의</div>
+      <p>val mAP = 1.0은 과적합이 아닌 <strong>val set 한계</strong>. 원본 37장은 synth 스타일 패턴을 포함하지 않아 synth 학습 효과가 val에 반영되지 않음. 실제 효과는 <strong>Kaggle 점수로만 확인</strong>.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 합성 데이터 전략 ══ -->
+<div class="section">
+  <div class="sec-hd"><h2 class="sec-t">합성 데이터 전략 — GrabCut Pipeline</h2></div>
+  <div class="sec-bd">
+    <p class="lead" style="margin-bottom:18px">Q4에서 병목이 <strong>데이터 다양성 부족</strong>으로 확인됨. 원본 <strong>232장</strong>(annotation 763개) 한계를 GrabCut 기반 합성으로 보완. 별도 세그멘테이션 모델 없이 bbox만으로 알약을 분리해 새 배경에 재배치.</p>
+
+    <!-- 파이프라인 흐름 -->
+    <div class="lbl">파이프라인 (3단계)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px">
+      <div class="ibox" style="border-left:3px solid var(--accent)">
+        <div class="ibox-t" style="color:var(--accent)">Phase 1 — GrabCut 크롭</div>
+        <p style="font-size:12px;line-height:1.7;color:var(--sub);margin-bottom:8px">bbox에 padding 12px 추가 → <code>cv2.grabCut()</code> 5회 반복 → foreground mask 추출 → pill_bank 적재</p>
+        <div class="irow"><span class="ik">크롭 수</span><span class="iv" style="color:var(--accent);font-weight:700">770개</span></div>
+        <div class="irow"><span class="ik">GrabCut 실패 시</span><span class="iv">bbox 영역 fallback</span></div>
+        <div class="irow"><span class="ik">저장 형식</span><span class="iv">crop_bgr + mask</span></div>
+      </div>
+      <div class="ibox" style="border-left:3px solid #8b5cf6">
+        <div class="ibox-t" style="color:#8b5cf6">Phase 2 — 배경 패치 수집</div>
+        <p style="font-size:12px;line-height:1.7;color:var(--sub);margin-bottom:8px">동일 원본 이미지에서 알약 bbox 바깥 영역을 랜덤 샘플링 → bg_pool 적재. 알약 margin 24px 제외 후 pill-free 확인</p>
+        <div class="irow"><span class="ik">배경 패치 수</span><span class="iv" style="color:#8b5cf6;font-weight:700">390개</span></div>
+        <div class="irow"><span class="ik">패치 크기</span><span class="iv">320×320 px</span></div>
+        <div class="irow"><span class="ik">이미지당</span><span class="iv">최대 3개</span></div>
+      </div>
+      <div class="ibox" style="border-left:3px solid var(--green)">
+        <div class="ibox-t" style="color:var(--green)">Phase 3 — 합성 이미지 생성</div>
+        <p style="font-size:12px;line-height:1.7;color:var(--sub);margin-bottom:8px">배경 resize → 알약 3~4개 역빈도 가중치로 샘플링 → scale 0.5~1.3·angle ±180° 적용 → alpha-blend 합성. 겹침 방지 IoU 체크</p>
+        <div class="irow"><span class="ik">생성 이미지</span><span class="iv" style="color:var(--green);font-weight:700">3,000장</span></div>
+        <div class="irow"><span class="ik">평균 알약/장</span><span class="iv">3.459개</span></div>
+        <div class="irow"><span class="ik">어노테이션</span><span class="iv">10,377개</span></div>
+      </div>
+    </div>
+
+    <!-- 실측치 요약 -->
+    <div class="lbl">WandB synth-build 실측치</div>
+    <div class="tbl-wrap" style="margin-bottom:16px">
+      <table>
+        <thead>
+          <tr><th>버전</th><th>img_size</th><th>pill_bank</th><th>bg_pool</th><th>합성 이미지</th><th>평균 알약/장</th><th>커버 클래스</th><th>소요 시간</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-weight:600;color:var(--text)">synth-1280</td>
+            <td>1280px</td><td>770개</td><td>390개</td>
+            <td><span class="sc b">3,000장</span></td>
+            <td>3.459</td><td>56종</td><td>~10분</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;color:var(--text)">synth-640</td>
+            <td>640px</td><td>770개</td><td>390개</td>
+            <td><span class="sc b">3,000장</span></td>
+            <td>3.445</td><td>56종</td><td>~6분</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 학습 통합 방식 -->
+    <div class="lbl">학습 통합</div>
+    <div class="g2" style="margin-bottom:14px">
+      <div class="ibox">
+        <div class="ibox-t">데이터셋 구성</div>
+        <div class="irow"><span class="ik">방식</span><span class="iv"><code>ConcatDataset</code></span></div>
+        <div class="irow"><span class="ik">원본 전체</span><span class="iv">232장 (annotation 763개)</span></div>
+        <div class="irow"><span class="ik">원본 학습셋</span><span class="iv">~195장 (8:2 split)</span></div>
+        <div class="irow"><span class="ik">합성 추가</span><span class="iv">3,000장</span></div>
+        <div class="irow"><span class="ik">합성 비율</span><span class="iv">총 학습셋의 ~94%</span></div>
+      </div>
+      <div class="ibox">
+        <div class="ibox-t">WeightedRandomSampler</div>
+        <div class="irow"><span class="ik">가중치</span><span class="iv">역빈도 (inverse_freq)</span></div>
+        <div class="irow"><span class="ik">적용 대상</span><span class="iv">원본 + 합성 통합</span></div>
+        <div class="irow"><span class="ik">목적</span><span class="iv">희귀 클래스 과샘플링</span></div>
+        <div class="irow"><span class="ik">replacement</span><span class="iv">True</span></div>
+      </div>
+    </div>
+
+    <!-- 역빈도 가중치 예시 -->
+    <div class="callout info">
+      <div class="c-label">역빈도 가중치 예시 — 희귀 클래스 보정 원리</div>
+      <p>클래스별 빈도를 pill_bank(770크롭) 기준으로 계산. <strong>자주 나오는 클래스</strong>(예: 153회 등장) → 가중치 약 1배. <strong>희귀 클래스</strong>(예: 3회 등장) → 가중치 약 51배. GrabCut 합성 단계에서도 동일 역빈도 가중치로 알약 샘플링 → 합성 이미지에서도 희귀 클래스가 자동 과대표됨.</p>
+    </div>
+
+    <!-- 현재 상태 -->
+    <div class="callout warn" style="margin-top:10px">
+      <div class="c-label">현재 이슈 — v5-synth-aug val mAP 포화</div>
+      <p>synth 포함 학습 런(<code>v5-synth-aug</code>, 640px, ep343 진행 중)이 ep186부터 val mAP50 <strong>1.0 포화</strong>. val set(37장, 원본만)이 synth 스타일 패턴을 대표하지 못해 발생하는 것으로 추정. Kaggle 제출로 실제 점수 확인 필요. 판정 기준: <strong>Kaggle &gt; val</strong>.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 파이널 런 ══ -->
+<div class="exp">
+  <div class="exp-hd">
+    <span class="exp-q">FINAL</span>
+    <span class="exp-title">파이널 런 — synth + 1280px + ep400</span>
+    <span class="exp-tag et-wip">진행 중</span>
+  </div>
+  <div class="exp-bd">
+    <p class="lead">Q5-A(1280px ep~150 하락 확인) + Q5-B(synth 다양성) 결과를 통합. 1280px은 수렴이 느릴 뿐이라는 가정 하에 synth + 1280px + ep400 병행 진행 중.</p>
+    <div class="har">
+      <div class="hb h-hyp">
+        <div class="hb-l">전제</div>
+        <div class="hb-t">1280px은 수렴이 느린 것이지 한계가 아님. ep400 + synth 다양성이 합쳐지면 ep150 하락을 역전할 것.</div>
+      </div>
+      <div class="hb h-exp">
+        <div class="hb-l">예상</div>
+        <div class="hb-t">Kaggle 단일 모델 <strong>0.949+</strong> (1024px ep200 기록 갱신). WBF 재구성 후 <strong>0.960+</strong> 목표.</div>
+      </div>
+      <div class="hb h-unk">
+        <div class="hb-l">실제 결과</div>
+        <div class="hb-t">학습 진행 중. <strong>Kaggle 미제출 — 결과 없음</strong>. Q5-B Kaggle 검증 완료 후 제출 판단.</div>
+      </div>
+    </div>
+    <div class="callout note" style="margin-top:12px">
+      <div class="c-label">판정 우선순위</div>
+      <p><strong>Kaggle &gt; val mAP &gt; train_loss</strong>. val 37장은 synth·고해상도 패턴 대표 불가 — val 수치 단독 판단 금지.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 학습 전략 ══ -->
+<div class="section">
+  <div class="sec-hd"><h2 class="sec-t">공통 학습 전략</h2></div>
+  <div class="sec-bd">
+    <table class="ph-table">
+      <thead>
+        <tr><th>Phase</th><th>비율</th><th>학습 범위</th><th>LR</th><th>특이사항</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="ph-num">Phase 1</span></td><td>× 0.2</td>
+          <td>Detect cv3 마지막 레이어만</td><td><code>5e-4</code></td>
+          <td>새 분류 레이어 먼저 수렴</td>
+        </tr>
+        <tr>
+          <td><span class="ph-num">Phase 2</span></td><td>× 0.4</td>
+          <td>Detect Head 전체 + EMA 시작</td><td><code>5e-4</code></td>
+          <td>bbox + 분류 동시 최적화</td>
+        </tr>
+        <tr>
+          <td><span class="ph-num">Phase 3</span></td><td>× 0.4</td>
+          <td>전체 (backbone LR = head × 1/10)</td>
+          <td>head <code>5e-5</code> / backbone <code>5e-6</code></td>
+          <td>LR warmup 5ep · BN eval 5ep · early_stop 활성화</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="hr"></div>
+    <div class="g2">
+      <div class="ibox">
+        <div class="ibox-t">EMA</div>
+        <div class="irow"><span class="ik">decay</span><span class="iv">0.995</span></div>
+        <div class="irow"><span class="ik">시작</span><span class="iv">Phase 2부터</span></div>
+        <div class="irow"><span class="ik">Phase 3 진입 시</span><span class="iv">EMA 리셋</span></div>
+        <div class="irow"><span class="ik">추론</span><span class="iv">EMA 가중치 사용</span></div>
+      </div>
+      <div class="ibox">
+        <div class="ibox-t">Early Stop · DataLoader</div>
+        <div class="irow"><span class="ik">patience</span><span class="iv">50 epoch</span></div>
+        <div class="irow"><span class="ik">min_delta</span><span class="iv">0.03</span></div>
+        <div class="irow"><span class="ik">적용 구간</span><span class="iv">Phase 3 전용</span></div>
+        <div class="irow"><span class="ik">num_workers</span><span class="iv">8 (A100 최적화)</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+<footer>
+  <span>Health Eat AI — Team 1 (imsotired)</span>
+  <span>Kaggle 제출 기록 기반 · 2026-06-04</span>
+</footer>
+</body>
+</html>

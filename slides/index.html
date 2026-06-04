@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Health Eat — AI Team 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#f4f4f6;color:#111118;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px}
+.wrap{max-width:620px;width:100%}
+.brand{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#88889a;margin-bottom:12px}
+h1{font-size:28px;font-weight:700;letter-spacing:-.02em;margin-bottom:6px}
+.sub{font-size:14px;color:#52525e;margin-bottom:40px}
+.cards{display:flex;flex-direction:column;gap:14px}
+.card{background:#fff;border:1px solid #e2e2e6;border-radius:10px;padding:22px 26px;text-decoration:none;color:inherit;display:flex;align-items:center;justify-content:space-between;gap:16px;transition:box-shadow .15s,border-color .15s}
+.card:hover{box-shadow:0 4px 20px rgba(0,0,0,.08);border-color:#c8c8d0}
+.card-tag{font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:2px 8px;border-radius:4px;margin-bottom:8px;display:inline-block}
+.tg-slide{background:#eef1ff;color:#1b4ef8}
+.tg-report{background:#e8f7f2;color:#0d9e6e}
+.card-title{font-size:16px;font-weight:600;margin-bottom:4px}
+.card-desc{font-size:12.5px;color:#88889a;line-height:1.6}
+.arrow{font-size:20px;color:#c8c8d0;flex-shrink:0}
+footer{margin-top:32px;font-size:11.5px;color:#88889a;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">Health Eat · AI Team 1</div>
+  <h1>경구약제 탐지 프로젝트</h1>
+  <p class="sub">Team 1 (김범진 · 황원재 · 유재열 · 박창준) &nbsp;·&nbsp; 2026-06-04</p>
+  <div class="cards">
+    <a class="card" href="health-eat-final.html">
+      <div class="card-info">
+        <div class="card-tag tg-slide">발표 슬라이드</div>
+        <div class="card-title">최종 발표 — YOLO11x 알약 탐지 모델</div>
+        <div class="card-desc">Best Score 0.956 · 3-Phase 학습 · WBF 앙상블 · GrabCut 합성 데이터</div>
+      </div>
+      <div class="arrow">→</div>
+    </a>
+    <a class="card" href="health-eat-wandb-report.html">
+      <div class="card-info">
+        <div class="card-tag tg-report">실험 기록</div>
+        <div class="card-title">WandB 실험 리포트</div>
+        <div class="card-desc">가설 / 예상 / 실제 결과 · Q3~Q5 실험 여정 · 해상도·합성 전략</div>
+      </div>
+      <div class="arrow">→</div>
+    </a>
+  </div>
+  <footer><a href="https://github.com/beomjinkim2000/Code_IT_Team_1_FirstProject" style="color:inherit">GitHub</a></footer>
+</div>
+</body>
+</html>
