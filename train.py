@@ -340,6 +340,7 @@ def main():
             if cfg["ema"]["enabled"]:
                 ema = ModelEMA(model).to(device)
             phase3_start_epoch = epoch
+            epochs_no_improve = 0  # Phase 3 진입 시 카운터 리셋 — Phase 1/2 plateau로 조기 종료 방지
             warmup_info = f", lr_warmup={phase3_warmup_epochs}ep" if phase3_warmup_epochs > 0 else ""
             bn_info = f", bn_frozen={phase3_bn_frozen_epochs}ep" if phase3_bn_frozen_epochs > 0 else ""
             print(f"[{epoch:03d}] Phase 3 시작: backbone lr={phase3_backbone_lr:.6f}, head lr={phase3_head_lr:.6f}{warmup_info}{bn_info}")
@@ -458,7 +459,7 @@ def main():
             f"  mAP(raw): {val_mAP_raw:.4f}  mAP(ema): {val_mAP_ema:.4f}  lr: {current_lr:.6f}"
         )
 
-        if early_stop_patience > 0 and epochs_no_improve >= early_stop_patience:
+        if early_stop_patience > 0 and phase3_start_epoch is not None and epochs_no_improve >= early_stop_patience:
             print(f"[{epoch:03d}] Early stopping — {early_stop_patience}에폭 동안 val mAP 개선 없음")
             break
 
