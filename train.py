@@ -301,6 +301,7 @@ def main():
 
     best_mAP = -1.0
     early_stop_patience = cfg["train"].get("early_stop_patience", 0)
+    early_stop_min_delta = cfg["train"].get("early_stop_min_delta", 0.0)
     epochs_no_improve = 0
     phase3_start_epoch = None
     for epoch in range(1, total_epochs + 1):
@@ -380,7 +381,7 @@ def main():
             val_mAP_ema = val_mAP_raw
             val_mAP_50_ema = val_mAP_50_raw
 
-        is_best = val_mAP_ema > best_mAP
+        is_best = val_mAP_ema > best_mAP + early_stop_min_delta
         if is_best:
             best_mAP = val_mAP_ema
             epochs_no_improve = 0
