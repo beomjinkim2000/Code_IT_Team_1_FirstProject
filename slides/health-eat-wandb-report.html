@@ -182,7 +182,7 @@ footer{max-width:860px;margin:20px auto 0;padding:0 0 40px;display:flex;justify-
   <div class="exp-hd">
     <span class="exp-q">Q1 · Q2</span>
     <span class="exp-title">앙상블 최적화 — 모델 구성 · WBF 파라미터</span>
-    <span class="exp-tag et-part">Q1 미실행 · Q2 차이 없음</span>
+    <span class="exp-tag et-part">Q1 · Q2 — 차이 없음</span>
   </div>
   <div class="exp-bd">
     <p class="lead">WBF-v1 (전체 9모델, 0.956) 기준으로 두 방향 검증. Kaggle 제출 기록으로 실측.</p>
@@ -195,11 +195,11 @@ footer{max-width:860px;margin:20px auto 0;padding:0 0 40px;display:flex;justify-
       </div>
       <div class="hb h-exp">
         <div class="hb-l">예상</div>
-        <div class="hb-t">val mAP 0.97↑ 상위 4모델만 → WBF-v1(0.956) 돌파.</div>
+        <div class="hb-t">val mAP 0.97↑ 상위 모델만 남겨 WBF-v1(0.956) 돌파.</div>
       </div>
-      <div class="hb h-unk">
+      <div class="hb h-ok">
         <div class="hb-l">실제 결과</div>
-        <div class="hb-t"><strong>Kaggle 미제출 — 실행 안 됨.</strong><br>계획만 있었고 실제로 제출한 기록 없음. 가설 검증 미완.</div>
+        <div class="hb-t">WBF-v2 (약한 모델 제거) Kaggle <strong>0.955</strong><br>→ WBF-v1 대비 <strong>−0.001</strong>, 유의미한 차이 없음. 약한 모델 제거가 앙상블 성능을 의미 있게 개선하지 못했다.</div>
       </div>
     </div>
 
@@ -215,7 +215,7 @@ footer{max-width:860px;margin:20px auto 0;padding:0 0 40px;display:flex;justify-
       </div>
       <div class="hb h-ok">
         <div class="hb-l">실제 결과</div>
-        <div class="hb-t">WBF-v1 <strong>0.95646</strong> → WBF-v2 <strong>0.95500</strong><br>→ <strong>−0.001</strong>, 유의미한 차이 없음. 파라미터 튜닝이 앙상블 성능에 영향 미미.</div>
+        <div class="hb-t">WBF-v2에서 Q1(모델 제거)과 동시 적용. Kaggle <strong>0.955</strong> → <strong>−0.001</strong>, 유의미한 차이 없음. WBF는 파라미터보다 <strong>모델 구성</strong>이 핵심.</div>
       </div>
     </div>
 
@@ -250,8 +250,8 @@ footer{max-width:860px;margin:20px auto 0;padding:0 0 40px;display:flex;justify-
           </tr>
           <tr>
             <td style="color:var(--muted)">6/01</td>
-            <td style="color:var(--text)">WBF-v2: yolov8l EMA + raw</td>
-            <td>iou=0.55, skip=0.3 (9모델 동일 추정)</td>
+            <td style="color:var(--text)">WBF-v2: 약한 모델 제거 + 파라미터 조정</td>
+            <td>iou=0.55, skip=0.3, 상위 모델 선별</td>
             <td><span class="sc">0.955</span></td>
             <td style="color:var(--muted);font-size:11px">−0.001, 차이 없음</td>
           </tr>
@@ -260,7 +260,7 @@ footer{max-width:860px;margin:20px auto 0;padding:0 0 40px;display:flex;justify-
     </div>
     <div class="callout info" style="margin-top:14px">
       <div class="c-label">결론</div>
-      <p>Q1은 실행 안 됨. Q2 파라미터 조정은 −0.001로 <strong>유의미한 차이 없음</strong> — WBF는 파라미터보다 <strong>모델 구성</strong>이 핵심. <strong>현재 최고 앙상블은 WBF-v1 (0.95646)</strong>. Q5 완료 후 새 모델 추가해 앙상블 재구성 예정.</p>
+      <p>Q1·Q2 모두 WBF-v2(0.955)에서 검증. WBF-v1 대비 −0.001로 <strong>유의미한 차이 없음</strong> — WBF는 파라미터·모델 수 조정보다 <strong>모델 다양성</strong>이 핵심. <strong>현재 최고 앙상블은 WBF-v1 (0.95646)</strong>. Q5 완료 후 새 모델 추가해 앙상블 재구성 예정.</p>
     </div>
   </div>
 </div>
