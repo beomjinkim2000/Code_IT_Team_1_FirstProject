@@ -222,7 +222,8 @@ def make_synth_image(
     annotations: list[dict] = []
 
     for pill_info in pills:
-        scale = random.uniform(0.5, 1.3)
+        resolution_ratio = img_size / 1280  # 원본 크롭이 1280px 기준 → img_size에 맞게 비율 보정
+        scale = random.uniform(0.5, 1.3) * resolution_ratio
         angle = random.uniform(-180, 180)
 
         ph, pw = pill_info["crop"].shape[:2]
@@ -231,9 +232,13 @@ def make_synth_image(
         margin = 10
 
         placed = False
+        lo_x, hi_x = pw_s // 2 + margin, img_size - pw_s // 2 - margin
+        lo_y, hi_y = ph_s // 2 + margin, img_size - ph_s // 2 - margin
+        if lo_x > hi_x or lo_y > hi_y:
+            continue  # 알약이 캔버스보다 커서 배치 불가 — 스킵
         for _ in range(15):
-            cx = random.randint(pw_s // 2 + margin, img_size - pw_s // 2 - margin)
-            cy = random.randint(ph_s // 2 + margin, img_size - ph_s // 2 - margin)
+            cx = random.randint(lo_x, hi_x)
+            cy = random.randint(lo_y, hi_y)
             new_box = (cx - pw_s // 2, cy - ph_s // 2, cx + pw_s // 2, cy + ph_s // 2)
 
             if any(_boxes_overlap(new_box, ob) for ob in placed_xyxy):
