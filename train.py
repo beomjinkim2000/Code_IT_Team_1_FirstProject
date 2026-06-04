@@ -238,11 +238,16 @@ def main():
 
     cw_cfg = cfg.get("class_weights") or {}
     cw_method = cw_cfg.get("method")
-    # ConcatDataset(synth 포함)은 .dataset.image_paths 구조가 없어 WeightedRandomSampler 불가
-    if cw_method and not args.synth_data:
+    if cw_method:
+        if args.synth_data:
+            all_paths = train_ds.datasets[0].image_paths + train_ds.datasets[1].image_paths
+            merged_ann = {**annotations, **train_ds.datasets[1].annotations}
+        else:
+            all_paths = train_ds.dataset.image_paths
+            merged_ann = annotations
         sample_weights = compute_sample_weights(
-            image_paths=train_ds.dataset.image_paths,
-            annotations=annotations,
+            image_paths=all_paths,
+            annotations=merged_ann,
             category_to_label=category_to_label,
             num_classes=cfg["data"]["nc"],
             method=cw_method,
@@ -252,8 +257,6 @@ def main():
         train_loader = DataLoader(train_ds, batch_size=cfg["train"]["batch_size"], sampler=sampler, collate_fn=collate_fn)
         print(f"class_weights: method={cw_method}, sample_weights min={min(sample_weights):.3f} max={max(sample_weights):.3f}")
     else:
-        if cw_method and args.synth_data:
-            print("class_weights: synth_data 사용 시 WeightedRandomSampler 비활성화 (shuffle 사용)")
         train_loader = DataLoader(train_ds, batch_size=cfg["train"]["batch_size"], shuffle=True, collate_fn=collate_fn)
 
     val_loader = DataLoader(
@@ -396,17 +399,6 @@ def main():
         )
 
 
-        if is_best and args.version and os.environ.get("WANDB_API_KEY"):
-            artifact_name = f"best-{args.version}"
-            artifact = wandb.Artifact(
-                name=artifact_name,
-                type="model",
-                metadata={"epoch": epoch, "val_mAP_ema": val_mAP_ema, "version": args.version},
-            )
-            best_pt = Path(cfg["paths"]["checkpoint"]) / "best.pt"
-            artifact.add_file(str(best_pt), name=f"best-{args.version}.pt")
-            wandb.log_artifact(artifact)
-
         current_lr = scheduler.get_last_lr()[-1]
         train_total_loss = box_loss + cls_loss + dfl_loss
         val_total_loss = val_box_loss + val_cls_loss + val_dfl_loss
@@ -460,6 +452,20 @@ def main():
     f1_file.close()
     wandb.summary["best_mAP_ema"] = best_mAP
     wandb.summary["total_epochs"] = total_epochs
+
+    if args.version and os.environ.get("WANDB_API_KEY"):
+        try:
+            best_pt = Path(cfg["paths"]["checkpoint"]) / (f"best-{args.version}.pt" if args.version else "best_model.pt")
+            artifact = wandb.Artifact(
+                name=f"best-{args.version}",
+                type="model",
+                metadata={"best_mAP_ema": best_mAP, "version": args.version},
+            )
+            artifact.add_file(str(best_pt), name=f"best-{args.version}.pt")
+            wandb.log_artifact(artifact)
+        except Exception as e:
+            print(f"WandB artifact 업로드 실패: {e}")
+
     wandb.finish()
     print(f"학습 완료. best_mAP(ema): {best_mAP:.4f}")
 
