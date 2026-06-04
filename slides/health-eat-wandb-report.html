@@ -378,7 +378,7 @@ footer{max-width:860px;margin:20px auto 0;padding:0 0 40px;display:flex;justify-
 
     <div class="callout warn" style="margin-top:14px">
       <div class="c-label">메커니즘 — loss_gap으로 읽는 증강 신호 소진</div>
-      <p><code>loss_gap</code>(val−train)이 0에 수렴하는 건 과적합이 아니라 <strong>데이터 증강 다양성을 전부 소진한 상태</strong>를 뜻함. ep1에서 −4.94이던 gap이 ep651에서 −0.11로 수렴 → 학습할 새로운 패턴이 없어진 것. val 37장이 실제 테스트 분포를 대표하지 못해서 val은 계속 좋아 보이지만 Kaggle은 떨어짐.</p>
+      <p><code>loss_gap</code>(val−train)이 0에 수렴하는 건 <strong>전통적인 과적합 신호만으로 보기 어렵다</strong>. 현재 증강·val 구성에서 <strong>새 패턴 신호가 줄어든 것</strong>으로 해석 — ep1에서 −4.94이던 gap이 ep651에서 −0.11로 수렴 → 데이터 증강 다양성을 전부 소진해 학습할 새로운 패턴이 없어진 상태. val 37장이 실제 테스트 분포를 대표하지 못해서 val은 계속 좋아 보이지만 Kaggle은 떨어짐.</p>
     </div>
     <div class="callout ok" style="margin-top:10px">
       <div class="c-label">결론 및 적용</div>
