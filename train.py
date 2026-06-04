@@ -239,11 +239,18 @@ def main():
     cw_cfg = cfg.get("class_weights") or {}
     cw_method = cw_cfg.get("method")
     if cw_method:
+        def _get_image_paths(ds):
+            if hasattr(ds, 'image_paths'):
+                return ds.image_paths
+            if hasattr(ds, 'dataset'):
+                return _get_image_paths(ds.dataset)
+            return []
+
         if args.synth_data:
-            all_paths = train_ds.datasets[0].image_paths + train_ds.datasets[1].image_paths
+            all_paths = _get_image_paths(train_ds.datasets[0]) + train_ds.datasets[1].image_paths
             merged_ann = {**annotations, **train_ds.datasets[1].annotations}
         else:
-            all_paths = train_ds.dataset.image_paths
+            all_paths = _get_image_paths(train_ds)
             merged_ann = annotations
         sample_weights = compute_sample_weights(
             image_paths=all_paths,
