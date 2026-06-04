@@ -261,17 +261,17 @@ def main():
             manual=cw_cfg.get("manual"),
         )
         sampler = WeightedRandomSampler(sample_weights, num_samples=len(sample_weights), replacement=True)
-        train_loader = DataLoader(train_ds, batch_size=cfg["train"]["batch_size"], sampler=sampler, collate_fn=collate_fn, num_workers=4, pin_memory=True, persistent_workers=True)
+        train_loader = DataLoader(train_ds, batch_size=cfg["train"]["batch_size"], sampler=sampler, collate_fn=collate_fn, num_workers=8, pin_memory=True, persistent_workers=True)
         print(f"class_weights: method={cw_method}, sample_weights min={min(sample_weights):.3f} max={max(sample_weights):.3f}")
     else:
-        train_loader = DataLoader(train_ds, batch_size=cfg["train"]["batch_size"], shuffle=True, collate_fn=collate_fn, num_workers=4, pin_memory=True, persistent_workers=True)
+        train_loader = DataLoader(train_ds, batch_size=cfg["train"]["batch_size"], shuffle=True, collate_fn=collate_fn, num_workers=8, pin_memory=True, persistent_workers=True)
 
     val_loader = DataLoader(
         val_ds,
         batch_size=cfg["train"]["batch_size"],
         shuffle=False,
         collate_fn=collate_fn,
-        num_workers=4,
+        num_workers=8,
         pin_memory=True,
         persistent_workers=True,
     )
