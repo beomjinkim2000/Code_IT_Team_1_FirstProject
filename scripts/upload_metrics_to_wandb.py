@@ -1,10 +1,19 @@
 """
 Google Drive에서 읽은 metrics CSV → WandB epoch-by-epoch 업로드
-Downloads/best_model.pt → WandB artifact (v5-11x-250)
 
 사용법:
   python scripts/upload_metrics_to_wandb.py
-  python scripts/upload_metrics_to_wandb.py --dry-run   # WandB 연결 없이 확인만
+  python scripts/upload_metrics_to_wandb.py --dry-run        # WandB 연결 없이 확인만
+  python scripts/upload_metrics_to_wandb.py --only q5        # 특정 실험만
+  python scripts/upload_metrics_to_wandb.py --csv-dir ~/Downloads/metrics  # CSV 경로 지정
+
+새 실험 metrics CSV 추가 방법 (Colab):
+  from google.colab import drive; drive.mount('/content/drive')
+  import shutil
+  # run-name 확인: train.py 실행 시 --run-name 인자값
+  shutil.copy('outputs/logs/metrics_<run-name>.csv',
+              '/content/drive/MyDrive/metrics_<run-name>.csv')
+  # 이후 CSV_DIR에 넣고 --only 로 해당 실험만 업로드
 """
 import argparse
 import csv
@@ -14,7 +23,7 @@ from pathlib import Path
 ENTITY = os.environ.get("WANDB_ENTITY", "health-eat-pill-detection")
 PROJECT = os.environ.get("WANDB_PROJECT", "health-eat-pill-detection")
 
-CSV_DIR = Path("/tmp/health_eat_metrics")
+CSV_DIR = Path(os.environ.get("WANDB_CSV_DIR", "/tmp/health_eat_metrics"))
 MODEL_PATH = Path("/Users/apple/Downloads/best_model.pt")
 
 RUNS = [
@@ -74,9 +83,61 @@ RUNS = [
         "tags": ["v5", "yolo11x", "best", "historical"],
         "csv_file": "metrics_V5.csv",
         "fmt": "v3",
-        "kaggle_score": None,
+        "kaggle_score": 0.943,
         "artifact_path": str(MODEL_PATH) if MODEL_PATH.exists() else None,
-        "notes": "YOLO11x best model. val mAP@50 EMA=1.0 at ep250.",
+        "notes": "YOLO11x best single model. val mAP@50 EMA=1.0 at ep250. Kaggle 0.943.",
+    },
+    {
+        "name": "v5-yolo11x-700ep",
+        "model": "yolo11x",
+        "epochs": 700,
+        "batch_size": 8,
+        "tags": ["v5", "yolo11x", "overfit", "historical"],
+        "csv_file": "metrics_v5(700ep).csv",
+        "fmt": "v3",
+        "kaggle_score": 0.936,
+        "artifact_path": None,
+        "notes": "700ep 과적합 실험. val mAP50-95 EMA=0.975으로 상승하지만 Kaggle 0.936으로 역전. ep250이 최적 확정.",
+    },
+    {
+        # metrics CSV 파일명 확인 필요 — Colab outputs/logs/metrics_<run-name>.csv
+        "name": "q5-highres-yolo11x-1280px",
+        "model": "yolo11x",
+        "epochs": 150,
+        "batch_size": 4,
+        "img_size": 1280,
+        "tags": ["q5", "yolo11x", "1280px", "highres"],
+        "csv_file": "metrics_q5_yolo11x_img1280_phase_resume_final.csv",
+        "fmt": "v3",
+        "kaggle_score": None,
+        "artifact_path": None,
+        "notes": "1280px 고해상도 실험. 목표 200ep, early stop으로 ~150ep 완료. LR 절반(linear scaling rule). batch=4.",
+    },
+    {
+        "name": "v6-yolo11x-400ep-synth-aug",
+        "model": "yolo11x",
+        "epochs": 400,
+        "batch_size": 8,
+        "img_size": 640,
+        "tags": ["v6", "yolo11x", "synth-aug", "400ep"],
+        "csv_file": "yolov11x-400-synth.csv",
+        "fmt": "v3",
+        "kaggle_score": 0.93573,
+        "artifact_path": None,
+        "notes": "Synthetic augmentation 400ep. best_mAP(ema)=0.9811. final ep400: mAP(raw)=0.9837, mAP(ema)=0.9860, loss=1.0949. Kaggle EMA=0.93573, RAW=0.93061. 가설(synth→plateau 연장) 불확인 — v5 250ep(0.94325)보다 낮음.",
+    },
+    {
+        "name": "v7-yolo11x-400ep-final-stopped309",
+        "model": "yolo11x",
+        "epochs": 309,
+        "batch_size": 8,
+        "img_size": 640,
+        "tags": ["v7", "yolo11x", "3phase", "400ep", "stopped"],
+        "csv_file": "metrics_v7_final400_stopped309.csv",
+        "fmt": "v3",
+        "kaggle_score": None,
+        "artifact_path": None,
+        "notes": "400ep final run, stopped early at ep309. Phase1=backbone-freeze(ep1-80), Phase2=head-only(ep81-240), Phase3=full-finetune(ep241-309). best_mAP(ema)=0.9814@ep308. ep309: loss=1.3368, mAP(raw)=0.9768, mAP(ema)=0.9767.",
     },
 ]
 
@@ -136,6 +197,7 @@ def upload_run(cfg: dict, dry_run: bool = False):
             "model": cfg["model"],
             "epochs": cfg["epochs"],
             "batch_size": cfg["batch_size"],
+            "img_size": cfg.get("img_size", 640),
             "source": "gdrive-historical",
         },
         tags=cfg["tags"],
@@ -187,8 +249,13 @@ def upload_run(cfg: dict, dry_run: bool = False):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true", help="WandB 연결 없이 데이터 확인만")
-    parser.add_argument("--only", default=None, help="특정 버전만 (예: v5)")
+    parser.add_argument("--only", default=None, help="특정 버전만 (예: v5, q5)")
+    parser.add_argument("--csv-dir", default=None, help="CSV 파일 경로 (기본: /tmp/health_eat_metrics)")
     args = parser.parse_args()
+
+    if args.csv_dir:
+        global CSV_DIR
+        CSV_DIR = Path(args.csv_dir)
 
     if not args.dry_run:
         api_key = os.environ.get("WANDB_API_KEY")
