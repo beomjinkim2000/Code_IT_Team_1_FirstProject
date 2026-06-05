@@ -1156,7 +1156,7 @@ wandb.log({
           <tr><td>Q4</td><td>epoch scan</td><td>YOLO11x</td><td>ep250 마지막 확인 피크</td><td style="color:var(--g)">0.94325</td></tr>
           <tr><td>Q5-A</td><td>synth-aug 640</td><td>YOLO11x</td><td>GrabCut 3000장 + ep400</td><td style="color:var(--r)">0.93573 ↓</td></tr>
           <tr><td>Q5-B</td><td>high-res 1024</td><td>YOLO11x</td><td>img1024 ep200</td><td style="color:var(--b)">0.94861</td></tr>
-          <tr><td>Q5-C</td><td>high-res 1280</td><td>YOLO11x</td><td>img1280 batch4 LR×0.5 → 조기종료</td><td style="color:var(--dim)">0.90857 (미완)</td></tr>
+          <tr><td>Q5-C</td><td>high-res 1280</td><td>YOLO11x</td><td>img1280 batch4 LR×0.5 → mAP 계속 하락, ep309 조기종료</td><td style="color:var(--dim)">미제출</td></tr>
         </tbody>
       </table>
     </div>
@@ -1176,7 +1176,7 @@ wandb.log({
           <li>Q4: <strong>epoch 증가와 과적합 관계 확인</strong> — ep250 이후 Kaggle 역전</li>
           <li>Q5-A: <strong>GrabCut synth 실패 확인</strong> — 데이터 추가됐지만 품질 문제로 0.93573, ep250(0.943)보다 낮음</li>
           <li>Q5-B: <strong>고해상도 가능성 확인</strong> — img1024 ep200에서 단일 최고 0.94861</li>
-          <li>Q5-C: img1280 LR 반감 + batch4 → 도중에 조기종료, 해석 보류</li>
+          <li>Q5-C: img1280 batch4 LR×0.5 — ep~150부터 mAP 계속 하락, Q5-A synth 실패 확인 후 조기종료</li>
         </ul>
       </div>
     </div>
@@ -1343,7 +1343,7 @@ wandb.log({
           <tbody>
             <tr><td>Q4-ep250 (기준)</td><td>증강 없음, img640</td><td style="color:var(--g);font-weight:700">0.94325</td></tr>
             <tr><td>Q5-A synth ep400</td><td>GrabCut 3000장, img640</td><td style="color:var(--r);font-weight:700">0.93573 ↓</td></tr>
-            <tr><td>Q5-C synth ep? 1280</td><td>img1280 batch4 LR×0.5</td><td style="color:var(--dim)">조기종료 (미완)</td></tr>
+            <tr><td>Q5-C 1280px</td><td>img1280 batch4 LR×0.5</td><td style="color:var(--dim)">ep~150 mAP 계속 하락 → 조기종료</td></tr>
           </tbody>
         </table>
         <p style="color:var(--dim);font-size:11px;line-height:1.5">데이터는 늘었으나 Kaggle에서 기준점보다 낮아짐. 원인: GrabCut 합성 품질 — 경계 아티팩트·조명 불일치가 노이즈로 작용.</p>
@@ -1541,7 +1541,7 @@ loader = <span class="fn">DataLoader</span>(dataset,
             <tr><td>Q4-ep700</td><td>YOLO11x ep700 (과적합)</td><td style="color:var(--r)">0.93593 ↓</td></tr>
             <tr><td>Q5-A synth</td><td>YOLO11x ep400 GrabCut 640</td><td style="color:var(--r)">0.93573 ↓ (실패)</td></tr>
             <tr class="hl"><td><strong>Q5-B 1024px</strong></td><td><strong>YOLO11x img1024 ep200</strong></td><td style="color:var(--g);font-weight:700">0.94861 ★단일 최고</td></tr>
-            <tr><td>Q5-C 1280px</td><td>YOLO11x img1280 batch4 LR×0.5</td><td style="color:var(--dim)">0.90857 (조기종료·미완)</td></tr>
+            <tr><td>Q5-C 1280px</td><td>YOLO11x img1280 batch4 LR×0.5</td><td style="color:var(--dim)">미제출 (ep309 mAP 계속 하락 → 조기종료)</td></tr>
           </tbody>
         </table>
       </div>

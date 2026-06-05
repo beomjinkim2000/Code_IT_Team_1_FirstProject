@@ -557,7 +557,7 @@ footer{max-width:860px;margin:20px auto 0;padding:0 0 40px;display:flex;justify-
       </div>
       <div class="hb h-res">
         <div class="hb-l">실제 결과</div>
-        <div class="hb-t">조기종료. Kaggle 제출 <strong>0.90857</strong> (img1280 미완). synth 품질 문제 + 1280px 수렴 지연이 겹쳐 전제 성립 안 됨.</div>
+        <div class="hb-t">조기종료. Kaggle <strong>미제출</strong>. synth 품질 문제 + 1280px 수렴 지연이 겹쳐 전제 성립 안 됨 → ep309 중단.</div>
       </div>
     </div>
     <div class="callout warn" style="margin-top:12px">
@@ -708,9 +708,9 @@ footer{max-width:860px;margin:20px auto 0;padding:0 0 40px;display:flex;justify-
           </tr>
           <tr>
             <td style="font-weight:500;color:var(--muted)">1280px 조기종료</td>
-            <td style="color:var(--muted)">mAP 계속 하락 — ep309 중단</td><td style="color:var(--muted)">YOLO11x</td>
-            <td><span class="sc" style="color:var(--sub)">0.909</span></td>
-            <td style="color:#f87171">−0.040</td>
+            <td style="color:var(--muted)">mAP 계속 하락 — ep309 중단, Kaggle 미제출</td><td style="color:var(--muted)">YOLO11x</td>
+            <td><span class="sc" style="color:var(--muted)">미제출</span></td>
+            <td style="color:var(--muted)">—</td>
           </tr>
         </tbody>
       </table>
@@ -761,7 +761,7 @@ footer{max-width:860px;margin:20px auto 0;padding:0 0 40px;display:flex;justify-
     </div>
     <div class="callout warn" style="margin-top:12px">
       <div class="c-label">실패 실험 요약</div>
-      <p>v5 700ep(0.936) — ep250 이후 과적합으로 하락. synth 640 400ep(0.936) — GrabCut 품질 문제로 0.943 미달. 1280px ep309 조기종료(0.909) — mAP 계속 하락으로 중단. <strong>세 실험 모두 단일 최고(1024px 0.949)에 미치지 못함.</strong></p>
+      <p>v5 700ep(0.936) — ep250 이후 과적합으로 하락. synth 640 400ep(0.936) — GrabCut 품질 문제로 0.943 미달. 1280px ep309 조기종료 — mAP 계속 하락으로 중단, Kaggle 미제출. <strong>점수 있는 실험 중 단일 최고는 1024px ep200 (0.949).</strong></p>
     </div>
   </div>
 </div>
