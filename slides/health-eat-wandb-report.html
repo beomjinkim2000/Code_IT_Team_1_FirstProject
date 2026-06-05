@@ -644,9 +644,9 @@ footer{max-width:860px;margin:20px auto 0;padding:0 0 40px;display:flex;justify-
 </div>
 
 
-<!-- ══ 중간 발표 이전 ══ -->
+<!-- ══ 전체 점수 흐름 ══ -->
 <div class="section">
-  <div class="sec-hd"><h2 class="sec-t">중간 발표 이전 — 점수 흐름</h2></div>
+  <div class="sec-hd"><h2 class="sec-t">전체 실험 점수 흐름 — 최종</h2></div>
   <div class="sec-bd">
     <div class="tbl-wrap">
       <table>
@@ -660,24 +660,14 @@ footer{max-width:860px;margin:20px auto 0;padding:0 0 40px;display:flex;justify-
             <td><span class="sc d">0.173</span></td><td>—</td>
           </tr>
           <tr>
-            <td style="font-weight:500;color:var(--text)">v2.1</td>
-            <td>3-Phase + AdamW + Mosaic ON</td><td>YOLOv8n</td>
-            <td><span class="sc b">0.540</span></td><td><span class="dt">+0.367</span></td>
-          </tr>
-          <tr>
             <td style="font-weight:500;color:var(--text)">v2.2</td>
             <td><strong>Mosaic OFF</strong></td><td>YOLOv8n</td>
-            <td><span class="sc b">0.699</span></td><td><span class="dt">+0.159</span></td>
-          </tr>
-          <tr>
-            <td style="font-weight:500;color:var(--text)">v2.3–v2.4</td>
-            <td>Phase 3 BN Freeze 버그 수정</td><td>YOLOv8n</td>
-            <td><span class="sc b">0.721</span></td><td><span class="dt">+0.022</span></td>
+            <td><span class="sc b">0.699</span></td><td><span class="dt">+0.526</span></td>
           </tr>
           <tr class="hl">
             <td style="font-weight:600;color:var(--text)">v2.5</td>
-            <td><strong>EMA 도입 + YOLOv8s</strong></td><td>YOLOv8s</td>
-            <td><span class="sc g">0.916</span></td><td><span class="dt">+0.195</span></td>
+            <td><strong>EMA 도입 + 모델 확장</strong></td><td>YOLOv8s→l</td>
+            <td><span class="sc g">0.916</span></td><td><span class="dt">+0.217</span></td>
           </tr>
           <tr>
             <td style="font-weight:500;color:var(--text)">v2.7</td>
@@ -686,14 +676,47 @@ footer{max-width:860px;margin:20px auto 0;padding:0 0 40px;display:flex;justify-
           </tr>
           <tr class="hl">
             <td style="font-weight:700;color:var(--text)">WBF-v1</td>
-            <td><strong>9모델 WBF 앙상블 전체</strong></td><td>YOLOv8l×8 + x×1</td>
+            <td><strong>9모델 WBF 앙상블</strong> ★최고 앙상블</td><td>YOLOv8l×8 + x×1</td>
             <td><span class="sc g" style="font-size:14px">0.956</span></td><td><span class="dt">+0.027</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:500;color:var(--text)">Q1 YOLO11x</td>
+            <td>아키텍처 교체 — C2PSA 블록</td><td>YOLO11x</td>
+            <td><span class="sc g">0.938</span></td><td><span class="dt">+0.009</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:500;color:var(--text)">v5 250ep</td>
+            <td>최적 epoch 확정 — val 포화 이후 하락</td><td>YOLO11x</td>
+            <td><span class="sc g">0.943</span></td><td><span class="dt">+0.005</span></td>
+          </tr>
+          <tr class="hl">
+            <td style="font-weight:700;color:var(--text)">1024px ep200</td>
+            <td><strong>고해상도 실험</strong> ★단일 최고</td><td>YOLO11x</td>
+            <td><span class="sc g" style="font-size:14px">0.949</span></td><td><span class="dt">+0.006</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:500;color:var(--muted)">v5 700ep</td>
+            <td style="color:var(--muted)">과적합 확인 — ep250 이후 Kaggle 하락</td><td style="color:var(--muted)">YOLO11x</td>
+            <td><span class="sc" style="color:var(--sub)">0.936</span></td>
+            <td style="color:#f87171">−0.007</td>
+          </tr>
+          <tr>
+            <td style="font-weight:500;color:var(--muted)">synth 400ep</td>
+            <td style="color:var(--muted)">GrabCut 증강 실패 — 품질 문제</td><td style="color:var(--muted)">YOLO11x</td>
+            <td><span class="sc" style="color:var(--sub)">0.936</span></td>
+            <td style="color:#f87171">−0.013</td>
+          </tr>
+          <tr>
+            <td style="font-weight:500;color:var(--muted)">1280px 조기종료</td>
+            <td style="color:var(--muted)">mAP 계속 하락 — ep~150 중단</td><td style="color:var(--muted)">YOLO11x</td>
+            <td><span class="sc" style="color:var(--sub)">0.909</span></td>
+            <td style="color:#f87171">−0.040</td>
           </tr>
         </tbody>
       </table>
     </div>
     <div class="hr"></div>
-    <div class="lbl">점수 추이</div>
+    <div class="lbl">점수 추이 — 주요 마일스톤</div>
     <div class="bchart">
       <div class="brow">
         <div class="blbl">v1.0 베이스라인</div>
@@ -716,10 +739,29 @@ footer{max-width:860px;margin:20px auto 0;padding:0 0 40px;display:flex;justify-
         <div class="bv" style="color:var(--green);font-weight:600">0.929</div>
       </div>
       <div class="brow">
-        <div class="blbl" style="font-weight:600;color:var(--text)">WBF-v1 9모델</div>
+        <div class="blbl" style="font-weight:600;color:var(--text)">WBF-v1 9모델 ★앙상블</div>
         <div class="btrk" style="height:9px"><div class="bfil" style="width:100%;background:linear-gradient(90deg,#059669,#1d4ed8)"></div></div>
         <div class="bv" style="color:var(--green);font-weight:700;font-size:13px">0.956</div>
       </div>
+      <div class="brow">
+        <div class="blbl">Q1 YOLO11x 채택</div>
+        <div class="btrk"><div class="bfil" style="width:98%;background:#34d399"></div></div>
+        <div class="bv" style="color:var(--green);font-weight:600">0.938</div>
+      </div>
+      <div class="brow">
+        <div class="blbl">v5 250ep 단일</div>
+        <div class="btrk"><div class="bfil" style="width:99%;background:#34d399"></div></div>
+        <div class="bv" style="color:var(--green);font-weight:600">0.943</div>
+      </div>
+      <div class="brow">
+        <div class="blbl" style="font-weight:600;color:var(--text)">1024px ep200 ★단일</div>
+        <div class="btrk" style="height:9px"><div class="bfil" style="width:99%;background:linear-gradient(90deg,#0d9488,#059669)"></div></div>
+        <div class="bv" style="color:var(--green);font-weight:700;font-size:13px">0.949</div>
+      </div>
+    </div>
+    <div class="callout warn" style="margin-top:12px">
+      <div class="c-label">실패 실험 요약</div>
+      <p>v5 700ep(0.936) — ep250 이후 과적합으로 하락. synth 640 400ep(0.936) — GrabCut 품질 문제로 0.943 미달. 1280px 조기종료(0.909) — ep~150부터 mAP 계속 하락. <strong>세 실험 모두 단일 최고(1024px 0.949)에 미치지 못함.</strong></p>
     </div>
   </div>
 </div>
@@ -727,7 +769,7 @@ footer{max-width:860px;margin:20px auto 0;padding:0 0 40px;display:flex;justify-
 </div>
 <footer>
   <span>Health Eat AI — Team 1 (imsotired)</span>
-  <span>Kaggle 제출 기록 기반 · 2026-06-04</span>
+  <span>Kaggle 제출 기록 기반 · 2026-06-05</span>
 </footer>
 </body>
 </html>
