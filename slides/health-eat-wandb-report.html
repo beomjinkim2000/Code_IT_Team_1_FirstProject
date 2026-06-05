@@ -484,20 +484,20 @@ footer{max-width:860px;margin:20px auto 0;padding:0 0 40px;display:flex;justify-
     <div class="tbl-wrap" style="margin-bottom:16px">
       <table>
         <thead>
-          <tr><th>버전</th><th>img_size</th><th>pill_bank</th><th>bg_pool</th><th>합성 이미지</th><th>평균 알약/장</th><th>커버 클래스</th><th>소요 시간</th></tr>
+          <tr><th>버전</th><th>img_size</th><th>pill_bank</th><th>bg_pool</th><th>합성 이미지</th><th>평균 알약/장</th><th>커버 클래스</th></tr>
         </thead>
         <tbody>
           <tr>
             <td style="font-weight:600;color:var(--text)">synth-1280</td>
             <td>1280px</td><td>770개</td><td>390개</td>
             <td><span class="sc b">3,000장</span></td>
-            <td>3.459</td><td>56종</td><td>~10분</td>
+            <td>3.459</td><td>56종</td>
           </tr>
           <tr>
             <td style="font-weight:600;color:var(--text)">synth-640</td>
             <td>640px</td><td>770개</td><td>390개</td>
             <td><span class="sc b">3,000장</span></td>
-            <td>3.445</td><td>56종</td><td>~6분</td>
+            <td>3.445</td><td>56종</td>
           </tr>
         </tbody>
       </table>
@@ -537,36 +537,6 @@ footer{max-width:860px;margin:20px auto 0;padding:0 0 40px;display:flex;justify-
   </div>
 </div>
 
-<!-- ══ 파이널 런 ══ -->
-<div class="exp">
-  <div class="exp-hd">
-    <span class="exp-q">FINAL</span>
-    <span class="exp-title">파이널 런 — synth + 1280px + ep400</span>
-    <span class="exp-tag et-fail">조기종료 · 실패</span>
-  </div>
-  <div class="exp-bd">
-    <p class="lead">Q5-B(synth 640) 실패 확인 후 1280px + synth 통합 런도 의미 없다 판단해 조기종료. batch=4, LR×0.5(linear scaling rule) 적용했으나 ep~150에서 mAP가 오르지 않아 중단.</p>
-    <div class="har">
-      <div class="hb h-hyp">
-        <div class="hb-l">전제</div>
-        <div class="hb-t">1280px은 수렴이 느린 것이지 한계가 아님. ep400 + synth 다양성이 합쳐지면 ep150 하락을 역전할 것.</div>
-      </div>
-      <div class="hb h-exp">
-        <div class="hb-l">예상</div>
-        <div class="hb-t">Kaggle 단일 모델 <strong>0.949+</strong> (1024px ep200 기록 갱신). WBF 재구성 후 <strong>0.960+</strong> 목표.</div>
-      </div>
-      <div class="hb h-res">
-        <div class="hb-l">실제 결과</div>
-        <div class="hb-t">조기종료. Kaggle <strong>미제출</strong>. synth 품질 문제 + 1280px 수렴 지연이 겹쳐 전제 성립 안 됨 → ep309 중단.</div>
-      </div>
-    </div>
-    <div class="callout warn" style="margin-top:12px">
-      <div class="c-label">판정</div>
-      <p>synth 640(0.93573)이 이미 ep250 기준(0.94325)보다 낮아 1280px 통합 실익 없음. <strong>단일 최고는 여전히 img1024 ep200 (0.94861)</strong>.</p>
-    </div>
-  </div>
-</div>
-
 <!-- ══ Q5-B: synth ══ -->
 <div class="exp">
   <div class="exp-hd">
@@ -592,6 +562,36 @@ footer{max-width:860px;margin:20px auto 0;padding:0 0 40px;display:flex;justify-
     <div class="callout warn" style="margin-top:12px">
       <div class="c-label">실패 원인 분석</div>
       <p>GrabCut 합성 데이터의 <strong>경계 아티팩트·조명 불일치</strong>로 인해 모델이 실제 패턴이 아닌 synth 노이즈를 학습. 데이터 수량 증가(+3,000장)가 오히려 품질 저하로 작용. val mAP 포화는 synth 학습 효과가 아닌 val set(원본 37장)이 synth 패턴을 대표하지 못해서 발생한 <strong>val set 한계</strong>였음.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 파이널 런 ══ -->
+<div class="exp">
+  <div class="exp-hd">
+    <span class="exp-q">FINAL</span>
+    <span class="exp-title">파이널 런 — synth + 1280px + ep400</span>
+    <span class="exp-tag et-fail">조기종료 · 실패</span>
+  </div>
+  <div class="exp-bd">
+    <p class="lead">Q5-B(synth 640) 실패 확인 후 1280px + synth 통합 런도 의미 없다 판단해 조기종료. batch=4, LR×0.5(linear scaling rule) 적용했으나 mAP가 계속 하락해 ep309 중단.</p>
+    <div class="har">
+      <div class="hb h-hyp">
+        <div class="hb-l">전제</div>
+        <div class="hb-t">1280px은 수렴이 느린 것이지 한계가 아님. ep400 + synth 다양성이 합쳐지면 하락을 역전할 것.</div>
+      </div>
+      <div class="hb h-exp">
+        <div class="hb-l">예상</div>
+        <div class="hb-t">Kaggle 단일 모델 <strong>0.949+</strong> (1024px ep200 기록 갱신). WBF 재구성 후 <strong>0.960+</strong> 목표.</div>
+      </div>
+      <div class="hb h-res">
+        <div class="hb-l">실제 결과</div>
+        <div class="hb-t">조기종료. Kaggle <strong>미제출</strong>. synth 품질 문제 + 1280px 수렴 지연이 겹쳐 전제 성립 안 됨 → ep309 중단.</div>
+      </div>
+    </div>
+    <div class="callout warn" style="margin-top:12px">
+      <div class="c-label">판정</div>
+      <p>synth 640(0.93573)이 이미 ep250 기준(0.94325)보다 낮아 1280px 통합 실익 없음. <strong>단일 최고는 여전히 img1024 ep200 (0.94861)</strong>.</p>
     </div>
   </div>
 </div>
