@@ -1176,7 +1176,7 @@ wandb.log({
           <li>Q4: <strong>epoch 증가와 과적합 관계 확인</strong> — ep250 이후 Kaggle 역전</li>
           <li>Q5-A: <strong>GrabCut synth 실패 확인</strong> — 데이터 추가됐지만 품질 문제로 0.93573, ep250(0.943)보다 낮음</li>
           <li>Q5-B: <strong>고해상도 가능성 확인</strong> — img1024 ep200에서 단일 최고 0.94861</li>
-          <li>Q5-C: img1280 batch4 LR×0.5 — ep~150부터 mAP 계속 하락, Q5-A synth 실패 확인 후 조기종료</li>
+          <li>Q5-C: img1280 batch4 LR×0.5 — mAP 계속 하락으로 ep309 조기종료 (Kaggle 미제출)</li>
         </ul>
       </div>
     </div>
@@ -1454,7 +1454,7 @@ loader = <span class="fn">DataLoader</span>(dataset,
       <tbody>
         <tr class="hl"><td><span class="badge bG">WBF-v1</span></td><td>YOLOv8l×8 + x</td><td>0.50</td><td>0.25</td><td>9모델 전체 앙상블</td><td style="color:var(--g);font-weight:700">0.95646</td></tr>
         <tr><td><span class="badge bO">WBF-v2</span></td><td>동일 9모델</td><td>0.55</td><td>0.30</td><td>파라미터 조정 효과?</td><td style="color:var(--o)">0.95500</td></tr>
-        <tr><td><span class="badge bB">Q1</span></td><td>상위 모델 선별</td><td>0.50</td><td>0.25</td><td>약한 모델 제거 효과?</td><td style="color:var(--dim)">미진행 (synth 실패로 우선순위 변경)</td></tr>
+        <tr><td><span class="badge bB">Q1</span></td><td>상위 모델 선별 (WBF-v2 통합)</td><td>0.50</td><td>0.25</td><td>약한 모델 제거 효과?</td><td style="color:var(--dim)">0.955 (−0.001, 차이 없음)</td></tr>
       </tbody>
     </table>
   </div>
@@ -1556,7 +1556,7 @@ loader = <span class="fn">DataLoader</span>(dataset,
         <ul class="f" style="font-size:12px">
           <li>Q3: <strong>YOLO11x > YOLOv8x</strong> 동일조건 비교로 채택 근거 확보</li>
           <li>Q4: 과적합 진입점 = ep250 확정 (ep700에서 역전)</li>
-          <li>Q5: img1024 val 개선 확인 (Kaggle 미제출)</li>
+          <li>Q5-B: img1024 ep200 Kaggle <strong>0.94861</strong> — 단일 최고 달성</li>
         </ul>
       </div>
       <div class="card cB">
